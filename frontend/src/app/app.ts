@@ -8,7 +8,7 @@ import { DriveService } from './drive';
   imports: [CommonModule, FormsModule],
   templateUrl: './app.html'
 })
-export class AppComponent {
+export class App {
   private driveService = inject(DriveService);
 
   // Angular Signals active pentru performanță sporită în SSR Hydration
