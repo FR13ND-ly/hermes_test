@@ -368,8 +368,8 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
 
     const response = await axios.post(targetUrl, {
       email,
-      password_hash,
-      full_name
+      passwordHash: password_hash,
+      fullName: full_name
     }, {
       headers: {
         'X-Hermes-App-Token': appApiKey,
@@ -395,7 +395,7 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
 
     const response = await axios.post(targetUrl, {
       email,
-      password_hash
+      passwordHash: password_hash
     }, {
       headers: {
         'X-Hermes-App-Token': appApiKey,
