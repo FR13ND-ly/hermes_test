@@ -23,13 +23,10 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copiem artefactele generate de build-ul Angular SSR.
-# În Angular modern, structura generată se află în dist/[nume-proiect]
-# Înlocuiește 'hermes-frontend' de mai jos cu numele exact al aplicației tale din package.json dacă diferă
-COPY --from=builder /app/dist/hermes-frontend/ ./dist/hermes-frontend/
+COPY --from=builder /app/dist/frontend/ ./dist/frontend/
 
 # Expunem portul standard folosit de serverul de producție Angular Node SSR
 EXPOSE 4000
 
 # Comanda de pornire rulează serverul Node compilat de Angular pentru SSR
-CMD ["node", "dist/hermes-frontend/server/main.js"]
+CMD ["node", "dist/frontend/server/server.mjs"]
