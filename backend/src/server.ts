@@ -12,6 +12,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const VOLUME_MOUNT_PATH = process.env.VOLUME_MOUNT_PATH || '/data';
 
+function getStorageUrl(): string {
+  let storageUrl = process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
+  if (storageUrl.endsWith('/storage')) {
+    storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
+  }
+  const isContainer = fs.existsSync('/.dockerenv') || process.env.KUBERNETES_SERVICE_HOST;
+  if (isContainer && storageUrl.includes('localhost')) {
+    storageUrl = storageUrl.replace('localhost', 'host.docker.internal');
+  }
+  return storageUrl;
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -168,12 +180,8 @@ app.post('/api/files', async (req: Request, res: Response) => {
 
 // Proxy pentru initializare upload in Storage Privat Hermes S3
 app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
-  let storageUrl = process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
+  const storageUrl = getStorageUrl();
   const storageToken = process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
-
-  if (storageUrl.endsWith('/storage')) {
-    storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
-  }
 
   console.log('Incoming init request body:', req.body);
 
@@ -205,11 +213,7 @@ app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
 app.post('/api/storage/upload/:id', async (req: Request, res: Response) => {
   try {
     const uploadId = req.params.id;
-    let storageUrl = process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
-
-    if (storageUrl.endsWith('/storage')) {
-      storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
-    }
+    const storageUrl = getStorageUrl();
 
     const url = new URL(storageUrl);
     const storageOrigin = url.origin;
@@ -256,12 +260,8 @@ app.get('/api/storage/download/:id', async (req: Request, res: Response) => {
 
     const storageObjectId = fileCheck.rows[0].storage_object_id;
 
-    let storageUrl = process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
+    const storageUrl = getStorageUrl();
     const storageToken = process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
-
-    if (storageUrl.endsWith('/storage')) {
-      storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
-    }
 
     const targetUrl = `${storageUrl}/private/${storageObjectId}?token=${storageToken}`;
 
