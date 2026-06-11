@@ -175,6 +175,8 @@ app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
     storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
   }
 
+  console.log('Incoming init request body:', req.body);
+
   try {
     const { fileName, mimeType, sizeBytes } = req.body;
 
