@@ -178,9 +178,9 @@ app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
     }
 
     const response = await axios.post(`${storageUrl}/upload/init`, {
-      file_path: `/bucket-test-privat/${fileName}`,
-      mime_type: mimeType,
-      size_bytes: sizeBytes
+      filePath: `/bucket-test-privat/${fileName}`,
+      mimeType: mimeType,
+      sizeBytes: sizeBytes
     }, {
       headers: { 'Authorization': `Bearer ${storageToken}` }
     });
