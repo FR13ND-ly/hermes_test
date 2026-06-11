@@ -35,5 +35,8 @@ COPY --from=builder /app/package*.json ./
 # Expunem portul pe care rulează Express (configurat în .env sau default 3000)
 EXPOSE 3000
 
+# Volum persistent detectat automat de Hermes
+VOLUME /data
+
 # Pornim aplicația backend
 CMD ["node", "dist/server.js"]
