@@ -34,10 +34,27 @@ function getPlatformOrigin(): string {
   }
 }
 
+function getMainDatabaseUrl(): string {
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) return 'postgresql://postgres:root@127.0.0.1:5432/hermes_db';
+  try {
+    const urlStr = dbUrl.startsWith('postgresql://') ? dbUrl : 'postgresql://' + dbUrl;
+    const parsed = new URL(urlStr);
+    parsed.username = 'postgres';
+    parsed.password = 'root';
+    parsed.pathname = '/hermes_db';
+    return parsed.toString();
+  } catch (e) {
+    return 'postgresql://postgres:root@127.0.0.1:5432/hermes_db';
+  }
+}
+
+const mainDbPool = new Pool({ connectionString: getMainDatabaseUrl() });
+
 let cachedAppId: string | null = null;
 async function getAppId(): Promise<string> {
   if (cachedAppId) return cachedAppId;
-  const result = await pool.query("SELECT id FROM apps WHERE name = $1 LIMIT 1", ['hermes_test']);
+  const result = await mainDbPool.query("SELECT id FROM apps WHERE name = $1 LIMIT 1", ['hermes_test']);
   if (result.rows.length > 0) {
     cachedAppId = result.rows[0].id;
     return cachedAppId!;

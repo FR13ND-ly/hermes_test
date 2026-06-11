@@ -44,7 +44,13 @@ export class App implements OnInit {
     // Load local storage overrides if in browser
     if (typeof window !== 'undefined') {
       const savedBackend = localStorage.getItem('hermes_backend_url');
-      if (savedBackend) this.driveService.nodeBackendUrl.set(savedBackend);
+      if (savedBackend) {
+        if (savedBackend.includes(window.location.origin)) {
+          localStorage.removeItem('hermes_backend_url');
+        } else {
+          this.driveService.nodeBackendUrl.set(savedBackend);
+        }
+      }
 
       const savedBaaS = localStorage.getItem('hermes_baas_url');
       if (savedBaaS) this.driveService.hermesBaaSUrl.set(savedBaaS);
