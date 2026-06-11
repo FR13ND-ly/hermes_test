@@ -168,14 +168,15 @@ app.post('/api/files', async (req: Request, res: Response) => {
 
 // Proxy pentru initializare upload in Storage Privat Hermes S3
 app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
+  let storageUrl = process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
+  const storageToken = process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
+
+  if (storageUrl.endsWith('/storage')) {
+    storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
+  }
+
   try {
     const { fileName, mimeType, sizeBytes } = req.body;
-    let storageUrl = process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
-    const storageToken = process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
-
-    if (storageUrl.endsWith('/storage')) {
-      storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
-    }
 
     const response = await axios.post(`${storageUrl}/upload/init`, {
       filePath: `/bucket-test-privat/${fileName}`,
@@ -187,7 +188,13 @@ app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
 
     res.json(response.data);
   } catch (error: any) {
-    console.error('Error in upload/init proxy:', error.response?.data || error.message);
+    console.error('Error in upload/init proxy:', {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      storageUrl,
+      hasToken: !!storageToken
+    });
     res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
   }
 });
