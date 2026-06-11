@@ -41,7 +41,6 @@ function getMainDatabaseUrl(): string {
     const urlStr = dbUrl.startsWith('postgresql://') ? dbUrl : 'postgresql://' + dbUrl;
     const parsed = new URL(urlStr);
     parsed.username = 'postgres';
-    parsed.password = 'root';
     parsed.pathname = '/hermes_db';
     return parsed.toString();
   } catch (e) {
@@ -54,12 +53,38 @@ const mainDbPool = new Pool({ connectionString: getMainDatabaseUrl() });
 let cachedAppId: string | null = null;
 async function getAppId(): Promise<string> {
   if (cachedAppId) return cachedAppId;
-  const result = await mainDbPool.query("SELECT id FROM apps WHERE name = $1 LIMIT 1", ['hermes_test']);
-  if (result.rows.length > 0) {
-    cachedAppId = result.rows[0].id;
-    return cachedAppId!;
+
+  // 1. Verificam daca ID-ul este setat direct ca variabila de mediu
+  if (process.env.HERMES_APP_ID) {
+    cachedAppId = process.env.HERMES_APP_ID;
+    console.log(`ℹ️ [Auth Proxy] Folosim App ID din HERMES_APP_ID: ${cachedAppId}`);
+    return cachedAppId;
   }
-  throw new Error("Application 'hermes_test' not found in database.");
+
+  // 2. Incercam sa extragem ID-ul din HERMES_BAAS_URL
+  const baasUrl = process.env.HERMES_BAAS_URL;
+  if (baasUrl) {
+    const match = baasUrl.match(/\/apps\/([a-f0-9-]{36})/i);
+    if (match && match[1]) {
+      cachedAppId = match[1];
+      console.log(`ℹ️ [Auth Proxy] Am extras App ID din HERMES_BAAS_URL: ${cachedAppId}`);
+      return cachedAppId;
+    }
+  }
+
+  // 3. Fallback pentru dezvoltare locala: interogam baza de date centrala
+  try {
+    const result = await mainDbPool.query("SELECT id FROM apps WHERE name = $1 LIMIT 1", ['hermes_test']);
+    if (result.rows.length > 0) {
+      cachedAppId = result.rows[0].id;
+      console.log(`ℹ️ [Auth Proxy] Am obtinut App ID din baza de date: ${cachedAppId}`);
+      return cachedAppId!;
+    }
+  } catch (dbErr: any) {
+    console.warn(`⚠️ [Auth Proxy] Nu s-a putut interoga baza de date centrala pentru App ID:`, dbErr.message);
+  }
+
+  throw new Error("Application 'hermes_test' ID could not be resolved (no env vars and DB query failed).");
 }
 
 app.use(cors());
