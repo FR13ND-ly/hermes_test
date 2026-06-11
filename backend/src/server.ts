@@ -46,9 +46,18 @@ const initDatabase = async () => {
       purged_count INT NOT NULL
     );
   `;
+  const createTestItemsTable = `
+    CREATE TABLE IF NOT EXISTS test_items (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `;
   await pool.query(createUserFilesTable);
   await pool.query(createCronExecutionsTable);
-  console.log('✅ [Postgres] Tabelele user_files și cron_executions au fost verificate/create.');
+  await pool.query(createTestItemsTable);
+  console.log('✅ [Postgres] Toate tabelele necesare au fost verificate/create.');
 };
 initDatabase().catch(console.error);
 
@@ -82,10 +91,61 @@ app.get('/api/config', (req: Request, res: Response) => {
 });
 
 // ==========================================
-// RUTE DATABASE (user_files)
+// CRUD DATABASE - test_items
 // ==========================================
+app.get('/api/items', async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query('SELECT * FROM test_items ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-// Preluare fișiere din DB parametrizat
+app.post('/api/items', async (req: Request, res: Response) => {
+  try {
+    const { title, description } = req.body;
+    if (!title) return res.status(400).json({ error: 'Titlul este obligatoriu.' });
+    const result = await pool.query(
+      'INSERT INTO test_items (title, description) VALUES ($1, $2) RETURNING *',
+      [title, description || '']
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/items/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, description } = req.body;
+    if (!title) return res.status(400).json({ error: 'Titlul este obligatoriu.' });
+    const result = await pool.query(
+      'UPDATE test_items SET title = $1, description = $2 WHERE id = $3 RETURNING *',
+      [title, description || '', id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Resursa nu a fost găsită.' });
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/items/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM test_items WHERE id = $1 RETURNING *', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Resursa nu a fost găsită.' });
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// RUTE STORAGE S3 (user_files)
+// ==========================================
 app.get('/api/files', requirePermission('any'), async (req: Request, res: Response) => {
   try {
     const userId = req.headers['x-user-id'] as string;
@@ -96,7 +156,6 @@ app.get('/api/files', requirePermission('any'), async (req: Request, res: Respon
   }
 });
 
-// Salvare metadate fișier după upload
 app.post('/api/files', requirePermission('any'), async (req: Request, res: Response) => {
   try {
     const userId = req.headers['x-user-id'] as string;
@@ -109,9 +168,6 @@ app.post('/api/files', requirePermission('any'), async (req: Request, res: Respo
   }
 });
 
-// ==========================================
-// RUTE STORAGE (Presigned URL via S2S API Key)
-// ==========================================
 app.get('/api/files/:id/download', requirePermission('any'), async (req: Request, res: Response) => {
   try {
     const fileId = req.params.id;
@@ -122,14 +178,13 @@ app.get('/api/files/:id/download', requirePermission('any'), async (req: Request
 
     const storageObjectId = fileCheck.rows[0].storage_object_id;
 
-    // Apelează controllerul tău de Rust din Hermes pentru private download token
+    // Generăm un token de descărcare prin storage-ul Hermes
     const hermesRes = await axios.post(
       `${process.env.HERMES_STORAGE_API_URL}/buckets/generate-token`, 
-      {}, // Corp gol conform metodei tale generate_bucket_token
+      {}, 
       { headers: { 'X-Hermes-API-Key': process.env.HERMES_API_KEY } }
     );
 
-    // Întoarcem link-ul virtual generat de calculate_virtual_url din Rust
     const downloadUrl = `${process.env.HERMES_STORAGE_API_URL}/private/${storageObjectId}?token=${hermesRes.data.token}`;
     res.json({ downloadUrl });
   } catch (error: any) {
@@ -140,25 +195,30 @@ app.get('/api/files/:id/download', requirePermission('any'), async (req: Request
 // ==========================================
 // RUTE PERSISTENT VOLUMES (PVC)
 // ==========================================
-
-// Scriere fișier în volumul persistent
-app.post('/api/volume/write', async (req: Request, res: Response) => {
+app.post('/api/volume/upload', async (req: Request, res: Response) => {
   try {
-    const { fileName, content } = req.body;
-    if (!fileName) return res.status(400).json({ error: 'Numele fișierului este obligatoriu.' });
+    const fileName = req.query.name as string;
+    if (!fileName) return res.status(400).json({ error: 'Numele fișierului lipsește.' });
 
     const safeName = path.basename(fileName);
     const filePath = path.join(VOLUME_MOUNT_PATH, safeName);
 
-    await fs.promises.writeFile(filePath, content || '', 'utf8');
-    res.json({ success: true, path: filePath });
+    const writeStream = fs.createWriteStream(filePath);
+    req.pipe(writeStream);
+
+    req.on('end', () => {
+      res.json({ success: true, name: safeName, path: filePath });
+    });
+
+    req.on('error', (err) => {
+      res.status(500).json({ error: 'Eroare la scrierea pe volum: ' + err.message });
+    });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Citire fișiere din volumul persistent
-app.get('/api/volume/read', async (req: Request, res: Response) => {
+app.get('/api/volume/files', async (req: Request, res: Response) => {
   try {
     if (!fs.existsSync(VOLUME_MOUNT_PATH)) {
       return res.json([]);
@@ -186,11 +246,26 @@ app.get('/api/volume/read', async (req: Request, res: Response) => {
   }
 });
 
-// ==========================================
-// RUTE CRON JOB LOGS
-// ==========================================
+app.delete('/api/volume/files/:name', async (req: Request, res: Response) => {
+  try {
+    const fileName = req.params.name;
+    const safeName = path.basename(fileName);
+    const filePath = path.join(VOLUME_MOUNT_PATH, safeName);
 
-// Webhook invocat de Hermes Cron Engine
+    if (fs.existsSync(filePath)) {
+      await fs.promises.unlink(filePath);
+      res.json({ success: true, message: `Fișierul ${safeName} a fost șters.` });
+    } else {
+      res.status(404).json({ error: 'Fișierul nu există pe volum.' });
+    }
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// RUTE CRON
+// ==========================================
 app.post('/api/cron/cleanup', async (req: Request, res: Response) => {
   const cronToken = req.headers['x-hermes-cron-token'];
   if (cronToken !== process.env.CRON_SECRET_TOKEN) {
@@ -208,16 +283,13 @@ app.post('/api/cron/cleanup', async (req: Request, res: Response) => {
       await pool.query('DELETE FROM user_files WHERE id = $1', [file.id]);
     }
 
-    // Salvăm execuția cron-ului în DB pentru vizualizare din interfață
     await pool.query('INSERT INTO cron_executions (purged_count) VALUES ($1)', [oldFiles.rows.length]);
-
     res.json({ success: true, purged: oldFiles.rows.length });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Preluare istoric rulare crons
 app.get('/api/cron/status', async (req: Request, res: Response) => {
   try {
     const result = await pool.query('SELECT * FROM cron_executions ORDER BY run_at DESC LIMIT 10');

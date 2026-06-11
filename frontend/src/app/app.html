@@ -1,5 +1,5 @@
 <main class="min-h-screen bg-neutral-950 text-neutral-100 antialiased selection:bg-indigo-500 selection:text-white py-12 px-4 font-sans">
-  <div class="max-w-3xl mx-auto space-y-8">
+  <div class="max-w-4xl mx-auto space-y-8">
     
     <!-- HEADER -->
     <header class="border-b border-neutral-900 pb-6 flex items-center justify-between flex-wrap gap-4">
@@ -8,17 +8,13 @@
           🧪 Hermes PaaS & BaaS All-in-One Testing Console
         </h1>
         <p class="text-xs text-neutral-400 mt-1">
-          Validare integrată: Builder, Database, Storage, BaaS, Volumes (PVC), Serverless și Crons.
+          Validare elementară: Database CRUD, 2 File Uploads (S3 Storage vs PVC Volume), Serverless și Crons.
         </p>
       </div>
       <div class="flex gap-2">
         <button (click)="showConfig.set(!showConfig())" 
                 class="bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-semibold py-2 px-3 rounded-lg border border-neutral-800 transition-all flex items-center gap-1.5 shadow-md">
           ⚙️ Setări Conexiuni
-        </button>
-        <button *ngIf="userId()" (click)="logout()" 
-                class="bg-red-950/40 hover:bg-red-950/70 text-red-200 text-xs font-semibold py-2 px-3 rounded-lg border border-red-900/50 transition-all shadow-md">
-          Deconectare
         </button>
       </div>
     </header>
@@ -60,146 +56,179 @@
       </div>
     </section>
 
-    <!-- BAAS AUTH -->
-    <section *ngIf="!userId()" class="bg-neutral-900 border border-neutral-900 rounded-xl p-6 shadow-xl space-y-4">
-      <div class="flex items-center gap-2 border-b border-neutral-850 pb-3">
-        <span class="text-xl">🔐</span>
-        <h3 class="text-lg font-semibold text-neutral-200">Autentificare Utilizatori (BaaS Module)</h3>
-      </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Nume Complet</label>
-          <input type="text" [(ngModel)]="fullName" placeholder="Ex. John Doe" 
-                 class="w-full bg-neutral-950 border border-neutral-805 rounded-lg px-3 py-2 text-sm text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-indigo-500 transition-colors">
+    <!-- DATABASE CRUD SECTION -->
+    <section class="bg-neutral-900 border border-neutral-900 rounded-xl p-6 shadow-xl space-y-6">
+      <div class="flex items-center justify-between border-b border-neutral-850 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🗄️</span>
+          <h3 class="text-md font-semibold text-neutral-200">Testare Bază de Date: CRUD Elementar (test_items)</h3>
         </div>
-        
-        <div>
-          <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Adresă Email</label>
-          <input type="email" [(ngModel)]="email" placeholder="john@example.com" 
-                 class="w-full bg-neutral-950 border border-neutral-805 rounded-lg px-3 py-2 text-sm text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-indigo-500 transition-colors">
-        </div>
-        
-        <div>
-          <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Parolă Cont</label>
-          <input type="password" [(ngModel)]="password" placeholder="••••••••" 
-                 class="w-full bg-neutral-950 border border-neutral-805 rounded-lg px-3 py-2 text-sm text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-indigo-500 transition-colors">
-        </div>
+        <button (click)="loadItems()" class="bg-neutral-950 hover:bg-neutral-900 border border-neutral-800 rounded p-1 text-xs">
+          🔄 Reîncarcă Date
+        </button>
       </div>
 
-      <div class="flex gap-3 pt-2">
-        <button (click)="onRegister()" 
-                class="flex-1 bg-neutral-800 hover:bg-neutral-750 text-neutral-200 font-medium text-xs py-2 px-4 rounded-lg transition-colors border border-neutral-700">
-          Înregistrare NOU Utilizator
-        </button>
-        <button (click)="onLogin()" 
-                class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs py-2 px-4 rounded-lg shadow-lg shadow-indigo-600/10 transition-colors">
-          Logare (Login)
-        </button>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Formular Adăugare/Editare -->
+        <div class="bg-neutral-950 p-4 rounded-xl border border-neutral-850 space-y-3">
+          <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+            {{ editingItemId() ? '✍️ Editează Resursă' : '➕ Adaugă Resursă' }}
+          </h4>
+          <div>
+            <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Titlu / Nume</label>
+            <input type="text" [(ngModel)]="itemTitle" placeholder="Ex: Sarcina principala" 
+                   class="w-full bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Descriere / Detalii</label>
+            <textarea [(ngModel)]="itemDesc" rows="3" placeholder="Ex: Detaliile acestei sarcini..." 
+                      class="w-full bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button *ngIf="!editingItemId()" (click)="addItem()" 
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-semibold transition-colors">
+              Adaugă în DB
+            </button>
+            <button *ngIf="editingItemId()" (click)="saveEdit()" 
+                    class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-semibold transition-colors">
+              Salvează
+            </button>
+            <button *ngIf="editingItemId()" (click)="cancelEdit()" 
+                    class="bg-neutral-800 hover:bg-neutral-700 text-neutral-400 py-1.5 px-3 rounded text-xs font-semibold transition-colors">
+              Anulează
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabel/Listă Rezultate -->
+        <div class="md:col-span-2 space-y-2">
+          <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Înregistrări existente în PostgreSQL:</h4>
+          <div class="bg-neutral-950 border border-neutral-850 rounded-xl divide-y divide-neutral-900 max-h-60 overflow-y-auto">
+            @for (item of items(); track item.id) {
+              <div class="p-3 text-xs flex items-center justify-between hover:bg-neutral-900/30 transition-colors">
+                <div class="space-y-0.5 pr-4 min-w-0">
+                  <h5 class="font-bold text-neutral-200 truncate">{{ item.title }}</h5>
+                  <p class="text-neutral-400 font-mono text-[10px] truncate">{{ item.description || '(fără descriere)' }}</p>
+                  <span class="text-[9px] text-neutral-500 block">Creat la: {{ item.created_at | date:'yyyy-MM-dd HH:mm:ss' }}</span>
+                </div>
+                <div class="flex gap-1.5 shrink-0">
+                  <button (click)="startEdit(item)" 
+                          class="bg-neutral-900 hover:bg-neutral-800 text-neutral-300 py-1 px-2 rounded border border-neutral-800 transition-colors">
+                    Editează
+                  </button>
+                  <button (click)="deleteItem(item.id)" 
+                          class="bg-red-950/20 hover:bg-red-950/50 text-red-300 py-1 px-2 rounded border border-red-900/40 transition-colors">
+                    Șterge
+                  </button>
+                </div>
+              </div>
+            } @empty {
+              <div class="p-8 text-center text-xs text-neutral-600 italic">
+                Nicio înregistrare găsită în tabela test_items. Adaugă una folosind formularul din stânga!
+              </div>
+            }
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- COMPONENT PANEL CÂND EȘTI LOGAT -->
-    <div *ngIf="userId()" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- TWO FILE UPLOADS SECTION -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       
-      <!-- STOCARE PRIVATĂ (S3) -->
-      <section class="bg-neutral-900 border border-neutral-900 rounded-xl p-6 shadow-xl space-y-6 flex flex-col justify-between">
-        <div class="space-y-4">
-          <div class="flex items-center justify-between border-b border-neutral-850 pb-3">
-            <div class="flex items-center gap-2">
-              <span class="text-xl">📁</span>
-              <h3 class="text-md font-semibold text-neutral-200">Storage Privat S3 (BaaS)</h3>
+      <!-- UPLOAD 1: STORAGE PRIVAT (S3 VIA BAAS) -->
+      <section class="bg-neutral-900 border border-neutral-900 rounded-xl p-6 shadow-xl space-y-4">
+        <div class="flex items-center gap-2 border-b border-neutral-850 pb-3">
+          <span class="text-xl">📁</span>
+          <h3 class="text-md font-semibold text-neutral-200">Upload 1: Storage Privat (S3 via Hermes)</h3>
+        </div>
+
+        <div *ngIf="!userId()" class="space-y-3">
+          <p class="text-xs text-neutral-400">
+            Modulul de Storage folosește securitatea BaaS. Conectează-te pentru a încărca fișiere în bucket-ul privat.
+          </p>
+          <div class="space-y-2">
+            <input type="email" [(ngModel)]="email" placeholder="Email" class="w-full bg-neutral-950 border border-neutral-850 rounded px-2 py-1 text-xs focus:outline-none">
+            <input type="password" [(ngModel)]="password" placeholder="Parolă" class="w-full bg-neutral-950 border border-neutral-850 rounded px-2 py-1 text-xs focus:outline-none">
+          </div>
+          <div class="flex gap-2">
+            <button (click)="onRegister()" class="flex-1 bg-neutral-800 hover:bg-neutral-750 text-xs py-1.5 rounded transition-all border border-neutral-750">Înregistrare</button>
+            <button (click)="onLogin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-xs py-1.5 rounded text-white font-semibold transition-all">Login</button>
+          </div>
+        </div>
+
+        <div *ngIf="userId()" class="space-y-4">
+          <div class="group relative border border-dashed border-neutral-800 hover:border-indigo-500/50 rounded-xl p-4 text-center cursor-pointer transition-colors bg-neutral-950/30">
+            <input type="file" (change)="onUpload($event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+            <div class="space-y-0.5">
+              <p class="text-xs font-semibold text-neutral-300 group-hover:text-indigo-400 transition-all">Selectează fișier pentru S3</p>
+              <p class="text-[9px] text-neutral-500">Trimis binar direct la S3 prin Hermes Storage Gateway</p>
             </div>
           </div>
 
-          <div class="group relative border border-dashed border-neutral-800 hover:border-indigo-500/50 rounded-xl p-5 text-center cursor-pointer transition-colors bg-neutral-950/30">
-            <input type="file" (change)="onUpload($event)" 
-                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-            <div class="space-y-1">
-              <p class="text-xs font-medium text-neutral-300 group-hover:text-indigo-400 transition-colors">
-                Trage sau selectează un fișier
-              </p>
-              <p class="text-[9px] text-neutral-500">Stream direct prin Axum Storage Gateway</p>
-            </div>
-          </div>
-          
           <div class="space-y-2">
-            <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Metadate stocate în DB:</h4>
-            <div class="bg-neutral-950 border border-neutral-850 rounded-lg divide-y divide-neutral-900 max-h-48 overflow-y-auto">
+            <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Fișiere în S3 (metadate DB):</h4>
+            <div class="bg-neutral-950 border border-neutral-850 rounded-lg divide-y divide-neutral-900 max-h-36 overflow-y-auto">
               @for (file of files(); track file.id) {
-                <div class="flex items-center justify-between p-2.5 text-xs hover:bg-neutral-900/50 transition-colors">
-                  <span class="truncate font-medium text-neutral-300 max-w-[150px]">{{ file.file_name }}</span>
-                  <button (click)="downloadFile(file.id)" 
-                          class="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[10px] py-1 px-2.5 rounded border border-neutral-700 transition-colors">
-                    Presigned Url
+                <div class="flex items-center justify-between p-2 text-xs hover:bg-neutral-900/50 transition-colors">
+                  <span class="truncate font-medium text-neutral-300 max-w-[140px]">{{ file.file_name }}</span>
+                  <button (click)="downloadFile(file.id)" class="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[10px] py-0.5 px-2 rounded border border-neutral-700">
+                    Descarcă S3
                   </button>
                 </div>
               } @empty {
-                <div class="p-4 text-center text-xs text-neutral-600 italic">
-                  Niciun fișier încărcat momentan.
-                </div>
+                <div class="p-3 text-center text-xs text-neutral-600 italic">Niciun fișier în S3.</div>
               }
             </div>
           </div>
-        </div>
-        <div class="pt-4 border-t border-neutral-850 flex items-center justify-between text-[10px] text-neutral-500">
-          <span>Sesiune UUID: {{ userId() | slice:0:8 }}...</span>
-          <span>Utilizator: {{ userEmail() }}</span>
+          
+          <div class="flex items-center justify-between text-[9px] text-neutral-500 pt-2 border-t border-neutral-850">
+            <span class="truncate">Utilizator: {{ userEmail() }}</span>
+            <button (click)="logout()" class="text-red-400 hover:underline">Deconectare</button>
+          </div>
         </div>
       </section>
 
-      <!-- PERSISTENT VOLUMES (PVC) -->
+      <!-- UPLOAD 2: VOLUM PERSISTENT (PVC) -->
       <section class="bg-neutral-900 border border-neutral-900 rounded-xl p-6 shadow-xl space-y-4">
         <div class="flex items-center justify-between border-b border-neutral-850 pb-3">
           <div class="flex items-center gap-2">
             <span class="text-xl">💾</span>
-            <h3 class="text-md font-semibold text-neutral-200">Volume Persistente (PVC Mount)</h3>
+            <h3 class="text-md font-semibold text-neutral-200">Upload 2: Volum Persistent (PVC Mount)</h3>
           </div>
-          <button (click)="refreshVolumeFiles()" 
-                  class="bg-neutral-950 hover:bg-neutral-900 border border-neutral-800 rounded p-1 text-xs">
+          <button (click)="refreshVolumeFiles()" class="bg-neutral-950 hover:bg-neutral-900 border border-neutral-800 rounded p-1 text-xs">
             🔄
           </button>
         </div>
 
-        <div class="space-y-3 text-xs">
-          <div class="bg-neutral-950/60 p-3 rounded-lg border border-neutral-850 space-y-2">
-            <div class="grid grid-cols-3 gap-2 items-center">
-              <span class="text-[10px] font-bold text-neutral-400 uppercase">Director Mount:</span>
-              <span class="col-span-2 text-indigo-300 font-mono text-[10px] bg-neutral-950 px-2 py-0.5 rounded border border-neutral-900">{{ driveService.volumePath() }}</span>
+        <div class="space-y-4">
+          <div class="group relative border border-dashed border-neutral-800 hover:border-emerald-500/50 rounded-xl p-4 text-center cursor-pointer transition-colors bg-neutral-950/30">
+            <input type="file" (change)="onVolumeUpload($event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+            <div class="space-y-0.5">
+              <p class="text-xs font-semibold text-neutral-300 group-hover:text-emerald-400 transition-all">Selectează fișier pentru PVC</p>
+              <p class="text-[9px] text-neutral-500">Salvat local pe disc în calea: {{ driveService.volumePath() }}</p>
             </div>
-            <div>
-              <label class="block text-[9px] font-semibold text-neutral-500 uppercase tracking-wider mb-1">Nume Fișier</label>
-              <input type="text" [(ngModel)]="volumeFileName" placeholder="date.txt" 
-                     class="w-full bg-neutral-950 border border-neutral-900 rounded px-2.5 py-1 text-xs text-neutral-100 focus:outline-none">
-            </div>
-            <div>
-              <label class="block text-[9px] font-semibold text-neutral-500 uppercase tracking-wider mb-1">Conținut Fișier</label>
-              <textarea [(ngModel)]="volumeFileContent" rows="2" 
-                        class="w-full bg-neutral-950 border border-neutral-900 rounded px-2.5 py-1 text-xs text-neutral-100 focus:outline-none resize-none"></textarea>
-            </div>
-            <button (click)="writeVolumeFile()" 
-                    class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 px-3 rounded text-[10px] font-semibold transition-colors shadow">
-              Scrie pe Volum Persistent
-            </button>
           </div>
 
           <div class="space-y-2">
-            <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Fișiere găsite pe volum:</h4>
+            <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Fișiere în volumul persistent:</h4>
             <div class="bg-neutral-950 border border-neutral-850 rounded-lg divide-y divide-neutral-900 max-h-36 overflow-y-auto">
               @for (file of volumeFiles(); track file.name) {
                 <div class="p-2 text-xs space-y-1 hover:bg-neutral-900/30 transition-colors">
-                  <div class="flex justify-between font-semibold text-neutral-300">
-                    <span class="truncate">📁 {{ file.name }}</span>
-                    <span class="text-neutral-500 text-[10px]">{{ file.size }} B</span>
+                  <div class="flex justify-between font-semibold text-neutral-300 items-center">
+                    <span class="truncate">📄 {{ file.name }}</span>
+                    <div class="flex gap-2 items-center">
+                      <span class="text-neutral-500 text-[10px] font-mono">{{ file.size }} B</span>
+                      <button (click)="deleteVolumeFile(file.name)" class="text-red-400 hover:text-red-300 text-[10px] bg-neutral-900 hover:bg-neutral-800 px-1.5 py-0.5 rounded border border-neutral-800">
+                        Șterge
+                      </button>
+                    </div>
                   </div>
-                  <p class="text-[10px] text-neutral-400 bg-neutral-950/80 px-2 py-1 rounded font-mono border border-neutral-900 overflow-x-auto truncate">
+                  <p class="text-[9px] text-neutral-400 bg-neutral-950/80 px-2 py-1 rounded font-mono border border-neutral-900 overflow-x-auto truncate">
                     {{ file.content }}
                   </p>
                 </div>
               } @empty {
-                <div class="p-3 text-center text-xs text-neutral-600 italic">
-                  Volumul este gol. Scrie un fișier mai sus.
-                </div>
+                <div class="p-3 text-center text-xs text-neutral-600 italic">Volumul este gol. Încarcă un fișier mai sus!</div>
               }
             </div>
           </div>
@@ -214,10 +243,6 @@
         <span class="text-xl">⚡</span>
         <h3 class="text-lg font-semibold text-neutral-200">Analitice Globale Stack (Serverless Knative)</h3>
       </div>
-
-      <p class="text-xs text-neutral-400">
-        Butonul de mai jos trimite o cerere către Express, care funcționează ca proxy și invocă endpoint-ul Knative. Dacă funcția este în starea <i>scale-to-zero</i> (0 replici active), Kubernetes o va porni automat la primirea cererii.
-      </p>
 
       <button (click)="runServerless()" 
               class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2 px-4 rounded-lg shadow transition-colors flex items-center justify-center gap-2">
@@ -245,25 +270,21 @@
         </button>
       </div>
 
-      <p class="text-xs text-neutral-400">
-        Acest istoric este salvat în baza de date PostgreSQL de către Express de fiecare dată când Hermes Cron Engine invoca Webhook-ul de cleanup `/api/cron/cleanup`.
-      </p>
-
-      <div class="bg-neutral-950 border border-neutral-850 rounded-lg divide-y divide-neutral-900 overflow-hidden text-xs">
+      <div class="bg-neutral-950 border border-neutral-850 rounded-lg divide-y divide-neutral-900 overflow-hidden text-xs font-mono">
         <div class="grid grid-cols-3 p-2.5 bg-neutral-900 font-bold text-neutral-400 border-b border-neutral-850">
           <span>Dată / Oră rulare</span>
           <span>Fișiere curățate (Purged)</span>
           <span>Status</span>
         </div>
         @for (cron of cronExecutions(); track cron.id) {
-          <div class="grid grid-cols-3 p-2.5 hover:bg-neutral-900/30 transition-colors font-mono text-[11px]">
+          <div class="grid grid-cols-3 p-2.5 hover:bg-neutral-900/30 transition-colors text-[11px]">
             <span class="text-neutral-300">{{ cron.run_at | date:'yyyy-MM-dd HH:mm:ss' }}</span>
             <span class="text-amber-400 font-semibold">{{ cron.purged_count }} fișiere</span>
             <span class="text-emerald-500 font-semibold">SUCCESS</span>
           </div>
         } @empty {
           <div class="p-4 text-center text-xs text-neutral-600 italic">
-            Nu s-a înregistrat nicio execuție a cron-ului în baza de date. Asigură-te că engine-ul Cron rulează în Hermes!
+            Nu s-a înregistrat nicio execuție a cron-ului în baza de date.
           </div>
         }
       </div>

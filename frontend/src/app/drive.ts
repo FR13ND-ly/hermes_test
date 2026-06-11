@@ -8,13 +8,11 @@ import { Observable } from 'rxjs';
 export class DriveService {
   private http = inject(HttpClient);
   
-  // Signals that can be set dynamically or loaded from the Express config API
   hermesBaaSUrl = signal('https://api.hermes-os.ro/api/v1/apps/APP_ID_AICI');
   nodeBackendUrl = signal('http://localhost:3000/api');
   appApiKey = signal('hm_tff.secret32charsAici'); 
   volumePath = signal('/data');
 
-  // Load config from the Node backend at runtime (dynamically fetches env vars)
   loadConfig() {
     this.http.get<any>(`${this.nodeBackendUrl()}/config`).subscribe({
       next: (config) => {
@@ -26,6 +24,7 @@ export class DriveService {
     });
   }
 
+  // BaaS Authentication APIs
   register(email: string, passwordHash: string, fullName: string): Observable<any> {
     const headers = new HttpHeaders().set('X-Hermes-App-Token', this.appApiKey());
     return this.http.post(`${this.hermesBaaSUrl()}/register`, {
@@ -40,6 +39,24 @@ export class DriveService {
     return this.http.post(`${this.hermesBaaSUrl()}/login`, { email, password_hash: passwordHash }, { headers });
   }
 
+  // Database CRUD (test_items)
+  getItems(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.nodeBackendUrl()}/items`);
+  }
+
+  createItem(title: string, description: string): Observable<any> {
+    return this.http.post(`${this.nodeBackendUrl()}/items`, { title, description });
+  }
+
+  updateItem(id: string, title: string, description: string): Observable<any> {
+    return this.http.put(`${this.nodeBackendUrl()}/items/${id}`, { title, description });
+  }
+
+  deleteItem(id: string): Observable<any> {
+    return this.http.delete(`${this.nodeBackendUrl()}/items/${id}`);
+  }
+
+  // Storage S3 Module
   getFiles(userId: string): Observable<any[]> {
     const headers = new HttpHeaders().set('x-user-id', userId);
     return this.http.get<any[]>(`${this.nodeBackendUrl()}/files`, { headers });
@@ -47,7 +64,6 @@ export class DriveService {
 
   initUploadSession(fileName: string, mimeType: string, sizeBytes: number): Observable<any> {
     const headers = new HttpHeaders().set('X-Hermes-App-Token', this.appApiKey());
-    // Extract domain from hermesBaaSUrl (strip /api/v1/apps/...)
     const url = new URL(this.hermesBaaSUrl());
     const origin = url.origin;
     return this.http.post(`${origin}/api/v1/storage/upload/init`, {
@@ -75,20 +91,27 @@ export class DriveService {
     return this.http.get(`${this.nodeBackendUrl()}/files/${fileId}/download`, { headers });
   }
 
+  // Volumes PVC Module
+  uploadFileToVolume(file: File): Observable<any> {
+    return this.http.post(`${this.nodeBackendUrl()}/volume/upload?name=${encodeURIComponent(file.name)}`, file, {
+      headers: new HttpHeaders().set('Content-Type', file.type || 'application/octet-stream')
+    });
+  }
+
+  getVolumeFiles(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.nodeBackendUrl()}/volume/files`);
+  }
+
+  deleteVolumeFile(name: string): Observable<any> {
+    return this.http.delete(`${this.nodeBackendUrl()}/volume/files/${encodeURIComponent(name)}`);
+  }
+
+  // Serverless Module
   triggerServerlessAnalytics(): Observable<any> {
     return this.http.get(`${this.nodeBackendUrl()}/analytics`);
   }
 
-  // Persistent Volumes API
-  writeToVolume(fileName: string, content: string): Observable<any> {
-    return this.http.post(`${this.nodeBackendUrl()}/volume/write`, { fileName, content });
-  }
-
-  readFromVolume(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.nodeBackendUrl()}/volume/read`);
-  }
-
-  // Cron Status API
+  // Cron Module
   getCronStatus(): Observable<any[]> {
     return this.http.get<any[]>(`${this.nodeBackendUrl()}/cron/status`);
   }

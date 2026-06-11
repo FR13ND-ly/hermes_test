@@ -11,7 +11,7 @@ import { DriveService } from './drive';
 export class App implements OnInit {
   public driveService = inject(DriveService);
 
-  // User session signals
+  // User session signals (for S3 storage BaaS testing)
   email = signal('');
   password = signal('');
   fullName = signal('');
@@ -19,13 +19,17 @@ export class App implements OnInit {
   userEmail = signal<string>('');
   files = signal<any[]>([]);
 
+  // Database CRUD signals (test_items table)
+  items = signal<any[]>([]);
+  itemTitle = signal('');
+  itemDesc = signal('');
+  editingItemId = signal<string | null>(null);
+
   // Serverless Knative signals
   serverlessOutput = signal<string>('Funcția Knative este în starea "idle" (0 replici)...');
 
   // Volume (PVC) signals
   volumeFiles = signal<any[]>([]);
-  volumeFileName = signal('test-pvc.txt');
-  volumeFileContent = signal('Această linie a fost salvată pe volumul persistent din Hermes!');
 
   // Cron logs signals
   cronExecutions = signal<any[]>([]);
@@ -57,13 +61,13 @@ export class App implements OnInit {
     // Load dynamic variables from Express backend env at runtime
     this.driveService.loadConfig();
 
-    // After loading config, sync inputs again briefly
+    // After loading config, sync inputs again and load initial data
     setTimeout(() => {
       this.baasUrlInput.set(this.driveService.hermesBaaSUrl());
       this.apiKeyInput.set(this.driveService.appApiKey());
       this.backendUrlInput.set(this.driveService.nodeBackendUrl());
       
-      // Load initial lists
+      this.loadItems();
       this.refreshVolumeFiles();
       this.refreshCronStatus();
     }, 1000);
@@ -84,6 +88,7 @@ export class App implements OnInit {
     this.showConfig.set(false);
 
     // Refresh active data
+    this.loadItems();
     if (this.userId()) this.loadFiles();
     this.refreshVolumeFiles();
     this.refreshCronStatus();
@@ -95,10 +100,70 @@ export class App implements OnInit {
       localStorage.removeItem('hermes_baas_url');
       localStorage.removeItem('hermes_api_key');
     }
-    // Reload to default config
     window.location.reload();
   }
 
+  // ==========================================
+  // DATABASE CRUD (test_items)
+  // ==========================================
+  loadItems() {
+    this.driveService.getItems().subscribe({
+      next: (data) => this.items.set(data),
+      error: (e) => console.warn('Eroare încărcare items:', e)
+    });
+  }
+
+  addItem() {
+    if (!this.itemTitle().trim()) {
+      alert('Te rog introdu un titlu.');
+      return;
+    }
+    this.driveService.createItem(this.itemTitle(), this.itemDesc()).subscribe({
+      next: () => {
+        this.itemTitle.set('');
+        this.itemDesc.set('');
+        this.loadItems();
+      },
+      error: (e) => alert('Eroare la adăugarea itemului: ' + e.message)
+    });
+  }
+
+  startEdit(item: any) {
+    this.editingItemId.set(item.id);
+    this.itemTitle.set(item.title);
+    this.itemDesc.set(item.description);
+  }
+
+  saveEdit() {
+    const id = this.editingItemId();
+    if (!id) return;
+    this.driveService.updateItem(id, this.itemTitle(), this.itemDesc()).subscribe({
+      next: () => {
+        this.cancelEdit();
+        this.loadItems();
+      },
+      error: (e) => alert('Eroare la salvarea modificărilor: ' + e.message)
+    });
+  }
+
+  cancelEdit() {
+    this.editingItemId.set(null);
+    this.itemTitle.set('');
+    this.itemDesc.set('');
+  }
+
+  deleteItem(id: string) {
+    if (confirm('Sigur vrei să ștergi acest element din baza de date?')) {
+      this.driveService.deleteItem(id).subscribe({
+        next: () => this.loadItems(),
+        error: (e) => alert('Eroare la ștergerea elementului: ' + e.message)
+      });
+    }
+  }
+
+  // ==========================================
+  // BAAS AUTHENTICATION & STORAGE S3
+  // ==========================================
   onRegister() {
     this.driveService.register(this.email(), this.password(), this.fullName()).subscribe({
       next: () => alert('Utilizator înregistrat cu succes în BaaS!'),
@@ -133,15 +198,12 @@ export class App implements OnInit {
     const uid = this.userId();
     if (!file || !uid) return;
 
-    // Step 1: Initialize upload session in Hermes Storage
     this.driveService.initUploadSession(file.name, file.type, file.size).subscribe({
       next: (initRes: any) => {
-        // Step 2: Upload raw binary to S3 via Axum Storage Gateway stream
         this.driveService.uploadBinaryStream(initRes.upload_url, file).subscribe({
           next: (uploadRes: any) => {
-            // Step 3: Save file meta database reference in Postgres via Express
             this.driveService.saveFileMetadata(uid, file.name, uploadRes.id).subscribe(() => {
-              alert('Fișier încărcat în Storage privat și salvat în baza de date!');
+              alert('Fișier încărcat în Storage privat S3 și salvat în baza de date!');
               this.loadFiles();
             });
           },
@@ -157,7 +219,6 @@ export class App implements OnInit {
     if (uid) {
       this.driveService.getSecureDownloadUrl(uid, fileId).subscribe({
         next: (res: any) => {
-          // Open the presigned virtual URL generated by Rust
           window.open(res.downloadUrl, '_blank');
         },
         error: (err) => alert('Eroare descărcare fișier: ' + err.message)
@@ -165,6 +226,41 @@ export class App implements OnInit {
     }
   }
 
+  // ==========================================
+  // PERSISTENT VOLUME (PVC)
+  // ==========================================
+  onVolumeUpload(event: any) {
+    const file: File = event.target.files[0];
+    if (!file) return;
+
+    this.driveService.uploadFileToVolume(file).subscribe({
+      next: () => {
+        alert('Fișier încărcat direct pe volumul persistent (PVC)!');
+        this.refreshVolumeFiles();
+      },
+      error: (e) => alert('Eroare la scrierea pe volum: ' + (e.error?.error || e.message))
+    });
+  }
+
+  deleteVolumeFile(name: string) {
+    if (confirm(`Sigur vrei să ștergi fișierul "${name}" de pe volum?`)) {
+      this.driveService.deleteVolumeFile(name).subscribe({
+        next: () => this.refreshVolumeFiles(),
+        error: (e) => alert('Eroare la ștergerea fișierului de pe volum: ' + e.message)
+      });
+    }
+  }
+
+  refreshVolumeFiles() {
+    this.driveService.getVolumeFiles().subscribe({
+      next: (files) => this.volumeFiles.set(files),
+      error: (e) => console.warn('Nu s-au putut prelua fișierele din volum:', e)
+    });
+  }
+
+  // ==========================================
+  // SERVERLESS & CRON
+  // ==========================================
   runServerless() {
     this.serverlessOutput.set('Invocare HTTP Knative... Serverul pornește la rece pod-ul efemer...');
     this.driveService.triggerServerlessAnalytics().subscribe({
@@ -177,29 +273,6 @@ export class App implements OnInit {
     });
   }
 
-  // Persistent Volume Actions
-  refreshVolumeFiles() {
-    this.driveService.readFromVolume().subscribe({
-      next: (files) => this.volumeFiles.set(files),
-      error: (e) => console.warn('Nu s-au putut prelua fișierele din volum:', e)
-    });
-  }
-
-  writeVolumeFile() {
-    if (!this.volumeFileName().trim()) {
-      alert('Te rog introdu un nume de fișier.');
-      return;
-    }
-    this.driveService.writeToVolume(this.volumeFileName(), this.volumeFileContent()).subscribe({
-      next: () => {
-        alert('Fișier salvat pe volumul persistent (PVC)!');
-        this.refreshVolumeFiles();
-      },
-      error: (e) => alert('Eroare scriere volum: ' + (e.error?.error || e.message))
-    });
-  }
-
-  // Cron Status Actions
   refreshCronStatus() {
     this.driveService.getCronStatus().subscribe({
       next: (logs) => this.cronExecutions.set(logs),
