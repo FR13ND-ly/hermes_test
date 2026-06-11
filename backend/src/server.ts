@@ -24,6 +24,27 @@ function getStorageUrl(): string {
   return storageUrl;
 }
 
+function getPlatformOrigin(): string {
+  const storageUrl = getStorageUrl();
+  try {
+    const parsed = new URL(storageUrl);
+    return parsed.origin;
+  } catch (e) {
+    return 'http://localhost:8000';
+  }
+}
+
+let cachedAppId: string | null = null;
+async function getAppId(): Promise<string> {
+  if (cachedAppId) return cachedAppId;
+  const result = await pool.query("SELECT id FROM apps WHERE name = $1 LIMIT 1", ['hermes_test']);
+  if (result.rows.length > 0) {
+    cachedAppId = result.rows[0].id;
+    return cachedAppId!;
+  }
+  throw new Error("Application 'hermes_test' not found in database.");
+}
+
 app.use(cors());
 app.use(express.json());
 
@@ -281,6 +302,59 @@ app.get('/api/storage/download/:id', async (req: Request, res: Response) => {
     response.data.pipe(res);
   } catch (error: any) {
     console.error('Error in download proxy:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+// Proxy pentru register in BaaS-ul platformei Hermes
+app.post('/api/auth/register', async (req: Request, res: Response) => {
+  try {
+    const { email, password_hash, full_name } = req.body;
+    const appId = await getAppId();
+    const platformOrigin = getPlatformOrigin();
+    const targetUrl = `${platformOrigin}/api/v1/apps/${appId}/auth/register`;
+    const appApiKey = process.env.HERMES_APP_TOKEN || 'hm_tff.secret32charsAici';
+
+    const response = await axios.post(targetUrl, {
+      email,
+      password_hash,
+      full_name
+    }, {
+      headers: {
+        'X-Hermes-App-Token': appApiKey,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    res.status(response.status).json(response.data);
+  } catch (error: any) {
+    console.error('Error in register proxy:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+// Proxy pentru login in BaaS-ul platformei Hermes
+app.post('/api/auth/login', async (req: Request, res: Response) => {
+  try {
+    const { email, password_hash } = req.body;
+    const appId = await getAppId();
+    const platformOrigin = getPlatformOrigin();
+    const targetUrl = `${platformOrigin}/api/v1/apps/${appId}/auth/login`;
+    const appApiKey = process.env.HERMES_APP_TOKEN || 'hm_tff.secret32charsAici';
+
+    const response = await axios.post(targetUrl, {
+      email,
+      password_hash
+    }, {
+      headers: {
+        'X-Hermes-App-Token': appApiKey,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    res.status(response.status).json(response.data);
+  } catch (error: any) {
+    console.error('Error in login proxy:', error.response?.data || error.message);
     res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
   }
 });

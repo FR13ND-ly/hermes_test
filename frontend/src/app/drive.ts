@@ -36,17 +36,15 @@ export class DriveService {
 
   // BaaS Authentication APIs
   register(email: string, passwordHash: string, fullName: string): Observable<any> {
-    const headers = new HttpHeaders().set('X-Hermes-App-Token', this.appApiKey());
-    return this.http.post(`${this.hermesBaaSUrl()}/register`, {
+    return this.http.post(`${this.nodeBackendUrl()}/auth/register`, {
       email,
       password_hash: passwordHash,
       full_name: fullName
-    }, { headers });
+    });
   }
 
   login(email: string, passwordHash: string): Observable<any> {
-    const headers = new HttpHeaders().set('X-Hermes-App-Token', this.appApiKey());
-    return this.http.post(`${this.hermesBaaSUrl()}/login`, { email, password_hash: passwordHash }, { headers });
+    return this.http.post(`${this.nodeBackendUrl()}/auth/login`, { email, password_hash: passwordHash });
   }
 
   // Database CRUD (test_items)
