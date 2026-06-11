@@ -1,35 +1,24 @@
-# Stage 1: Build local pentru Angular cu SSR
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copiem pachetele pentru instalarea dependințelor
 COPY package*.json ./
+RUN npm ci --force
 
-# Instalăm dependințele curate
-RUN npm ci
-
-# Copiem restul fișierelor proiectului (inclusiv tailwind.config.js, angular.json etc.)
 COPY . .
 
-# Compilăm aplicația în mod producție (va genera folderele browser și server)
-RUN npm run build -- --configuration=production
+RUN npm run build
 
-
-# Stage 2: Serverul Node.js care va servi aplicația Angular SSR
-FROM node:20-alpine AS runner
+FROM node:22-alpine
 
 WORKDIR /app
 
+COPY --from=builder /app/dist ./dist
+
 ENV NODE_ENV=production
+ENV PORT=4000
+ENV HOST=0.0.0.0
 
-# Copiem artefactele generate de build-ul Angular SSR.
-# În Angular modern, structura generată se află în dist/[nume-proiect]
-# Înlocuiește 'hermes-frontend' de mai jos cu numele exact al aplicației tale din package.json dacă diferă
-COPY --from=builder /app/dist/hermes-frontend/ ./dist/hermes-frontend/
-
-# Expunem portul standard folosit de serverul de producție Angular Node SSR
 EXPOSE 4000
 
-# Comanda de pornire rulează serverul Node compilat de Angular pentru SSR
-CMD ["node", "dist/hermes-frontend/server/main.js"]
+CMD ["node", "dist/frontend/server/server.mjs"]
