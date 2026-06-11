@@ -190,14 +190,14 @@ app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
 
     res.json(response.data);
   } catch (error: any) {
-    console.error('Error in upload/init proxy:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      storageUrl,
-      hasToken: !!storageToken
-    });
-    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+    const errorDetails: any = {};
+    if (error) {
+      Object.getOwnPropertyNames(error).forEach((key) => {
+        errorDetails[key] = error[key];
+      });
+    }
+    console.error('Error in upload/init proxy details:', errorDetails);
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message || 'Unknown proxy error' });
   }
 });
 
