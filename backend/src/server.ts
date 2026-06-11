@@ -86,7 +86,8 @@ app.get('/api/config', (req: Request, res: Response) => {
     hermesBaaSUrl: process.env.HERMES_BAAS_URL || 'https://api.hermes-os.ro/api/v1/apps/APP_ID_AICI',
     appApiKey: process.env.HERMES_APP_TOKEN || 'hm_tff.secret32charsAici',
     serverlessUrl: process.env.SERVERLESS_REPORT_URL || '',
-    volumePath: VOLUME_MOUNT_PATH
+    volumePath: VOLUME_MOUNT_PATH,
+    storageToken: process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || ''
   });
 });
 
@@ -146,35 +147,32 @@ app.delete('/api/items/:id', async (req: Request, res: Response) => {
 // ==========================================
 // RUTE STORAGE S3 (user_files)
 // ==========================================
-app.get('/api/files', requirePermission('any'), async (req: Request, res: Response) => {
+app.get('/api/files', async (req: Request, res: Response) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
-    const result = await pool.query('SELECT * FROM user_files WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
+    const result = await pool.query('SELECT * FROM user_files ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.post('/api/files', requirePermission('any'), async (req: Request, res: Response) => {
+app.post('/api/files', async (req: Request, res: Response) => {
   try {
-    const userId = req.headers['x-user-id'] as string;
     const { fileName, storageObjectId } = req.body;
     const query = 'INSERT INTO user_files (user_id, file_name, storage_object_id) VALUES ($1, $2, $3) RETURNING *';
-    const result = await pool.query(query, [userId, fileName, storageObjectId]);
+    const result = await pool.query(query, ['00000000-0000-0000-0000-000000000000', fileName, storageObjectId]);
     res.status(201).json(result.rows[0]);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.get('/api/files/:id/download', requirePermission('any'), async (req: Request, res: Response) => {
+app.get('/api/files/:id/download', async (req: Request, res: Response) => {
   try {
     const fileId = req.params.id;
-    const userId = req.headers['x-user-id'] as string;
 
-    const fileCheck = await pool.query('SELECT storage_object_id FROM user_files WHERE id = $1 AND user_id = $2', [fileId, userId]);
-    if (fileCheck.rows.length === 0) return res.status(403).json({ error: 'Acces interzis.' });
+    const fileCheck = await pool.query('SELECT storage_object_id FROM user_files WHERE id = $1', [fileId]);
+    if (fileCheck.rows.length === 0) return res.status(404).json({ error: 'Fișierul nu a fost găsit.' });
 
     const storageObjectId = fileCheck.rows[0].storage_object_id;
 

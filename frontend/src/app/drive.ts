@@ -12,6 +12,7 @@ export class DriveService {
   nodeBackendUrl = signal('http://localhost:3000/api');
   appApiKey = signal('hm_tff.secret32charsAici'); 
   volumePath = signal('/data');
+  storageToken = signal('');
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -29,6 +30,7 @@ export class DriveService {
         if (config.hermesBaaSUrl) this.hermesBaaSUrl.set(config.hermesBaaSUrl);
         if (config.appApiKey) this.appApiKey.set(config.appApiKey);
         if (config.volumePath) this.volumePath.set(config.volumePath);
+        if (config.storageToken) this.storageToken.set(config.storageToken);
       },
       error: (err) => console.warn('Could not load dynamic configuration from backend:', err)
     });
@@ -67,13 +69,12 @@ export class DriveService {
   }
 
   // Storage S3 Module
-  getFiles(userId: string): Observable<any[]> {
-    const headers = new HttpHeaders().set('x-user-id', userId);
-    return this.http.get<any[]>(`${this.nodeBackendUrl()}/files`, { headers });
+  getFiles(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.nodeBackendUrl()}/files`);
   }
 
   initUploadSession(fileName: string, mimeType: string, sizeBytes: number): Observable<any> {
-    const headers = new HttpHeaders().set('X-Hermes-App-Token', this.appApiKey());
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${this.storageToken()}`);
     const url = new URL(this.hermesBaaSUrl());
     const origin = url.origin;
     return this.http.post(`${origin}/api/v1/storage/upload/init`, {
@@ -91,14 +92,12 @@ export class DriveService {
     });
   }
 
-  saveFileMetadata(userId: string, fileName: string, storageObjectId: string): Observable<any> {
-    const headers = new HttpHeaders().set('x-user-id', userId);
-    return this.http.post(`${this.nodeBackendUrl()}/files`, { fileName, storageObjectId }, { headers });
+  saveFileMetadata(fileName: string, storageObjectId: string): Observable<any> {
+    return this.http.post(`${this.nodeBackendUrl()}/files`, { fileName, storageObjectId });
   }
 
-  getSecureDownloadUrl(userId: string, fileId: string): Observable<any> {
-    const headers = new HttpHeaders().set('x-user-id', userId);
-    return this.http.get(`${this.nodeBackendUrl()}/files/${fileId}/download`, { headers });
+  getSecureDownloadUrl(fileId: string): Observable<any> {
+    return this.http.get(`${this.nodeBackendUrl()}/files/${fileId}/download`);
   }
 
   // Volumes PVC Module

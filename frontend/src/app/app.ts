@@ -68,6 +68,7 @@ export class App implements OnInit {
       this.backendUrlInput.set(this.driveService.nodeBackendUrl());
       
       this.loadItems();
+      this.loadFiles();
       this.refreshVolumeFiles();
       this.refreshCronStatus();
     }, 1000);
@@ -89,7 +90,7 @@ export class App implements OnInit {
 
     // Refresh active data
     this.loadItems();
-    if (this.userId()) this.loadFiles();
+    this.loadFiles();
     this.refreshVolumeFiles();
     this.refreshCronStatus();
   }
@@ -189,20 +190,21 @@ export class App implements OnInit {
   }
 
   loadFiles() {
-    const uid = this.userId();
-    if (uid) this.driveService.getFiles(uid).subscribe(data => this.files.set(data));
+    this.driveService.getFiles().subscribe({
+      next: (data) => this.files.set(data),
+      error: (e) => console.warn('Eroare încărcare fișiere S3:', e)
+    });
   }
 
   onUpload(event: any) {
     const file: File = event.target.files[0];
-    const uid = this.userId();
-    if (!file || !uid) return;
+    if (!file) return;
 
     this.driveService.initUploadSession(file.name, file.type, file.size).subscribe({
       next: (initRes: any) => {
         this.driveService.uploadBinaryStream(initRes.upload_url, file).subscribe({
           next: (uploadRes: any) => {
-            this.driveService.saveFileMetadata(uid, file.name, uploadRes.id).subscribe(() => {
+            this.driveService.saveFileMetadata(file.name, uploadRes.id).subscribe(() => {
               alert('Fișier încărcat în Storage privat S3 și salvat în baza de date!');
               this.loadFiles();
             });
@@ -215,15 +217,12 @@ export class App implements OnInit {
   }
 
   downloadFile(fileId: string) {
-    const uid = this.userId();
-    if (uid) {
-      this.driveService.getSecureDownloadUrl(uid, fileId).subscribe({
-        next: (res: any) => {
-          window.open(res.downloadUrl, '_blank');
-        },
-        error: (err) => alert('Eroare descărcare fișier: ' + err.message)
-      });
-    }
+    this.driveService.getSecureDownloadUrl(fileId).subscribe({
+      next: (res: any) => {
+        window.open(res.downloadUrl, '_blank');
+      },
+      error: (err) => alert('Eroare descărcare fișier: ' + err.message)
+    });
   }
 
   // ==========================================

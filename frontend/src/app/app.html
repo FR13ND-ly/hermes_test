@@ -142,21 +142,7 @@
           <h3 class="text-md font-semibold text-neutral-200">Upload 1: Storage Privat (S3 via Hermes)</h3>
         </div>
 
-        <div *ngIf="!userId()" class="space-y-3">
-          <p class="text-xs text-neutral-400">
-            Modulul de Storage folosește securitatea BaaS. Conectează-te pentru a încărca fișiere în bucket-ul privat.
-          </p>
-          <div class="space-y-2">
-            <input type="email" [(ngModel)]="email" placeholder="Email" class="w-full bg-neutral-950 border border-neutral-850 rounded px-2 py-1 text-xs focus:outline-none">
-            <input type="password" [(ngModel)]="password" placeholder="Parolă" class="w-full bg-neutral-950 border border-neutral-850 rounded px-2 py-1 text-xs focus:outline-none">
-          </div>
-          <div class="flex gap-2">
-            <button (click)="onRegister()" class="flex-1 bg-neutral-800 hover:bg-neutral-750 text-xs py-1.5 rounded transition-all border border-neutral-750">Înregistrare</button>
-            <button (click)="onLogin()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-xs py-1.5 rounded text-white font-semibold transition-all">Login</button>
-          </div>
-        </div>
-
-        <div *ngIf="userId()" class="space-y-4">
+        <div class="space-y-4">
           <div class="group relative border border-dashed border-neutral-800 hover:border-indigo-500/50 rounded-xl p-4 text-center cursor-pointer transition-colors bg-neutral-950/30">
             <input type="file" (change)="onUpload($event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
             <div class="space-y-0.5">
@@ -179,11 +165,6 @@
                 <div class="p-3 text-center text-xs text-neutral-600 italic">Niciun fișier în S3.</div>
               }
             </div>
-          </div>
-          
-          <div class="flex items-center justify-between text-[9px] text-neutral-500 pt-2 border-t border-neutral-850">
-            <span class="truncate">Utilizator: {{ userEmail() }}</span>
-            <button (click)="logout()" class="text-red-400 hover:underline">Deconectare</button>
           </div>
         </div>
       </section>
