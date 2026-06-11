@@ -57,6 +57,14 @@ export class App implements OnInit {
 
       const savedApiKey = localStorage.getItem('hermes_api_key');
       if (savedApiKey) this.driveService.appApiKey.set(savedApiKey);
+
+      // Load user session if saved
+      const savedUserId = localStorage.getItem('hermes_user_id');
+      const savedUserEmail = localStorage.getItem('hermes_user_email');
+      if (savedUserId && savedUserEmail) {
+        this.userId.set(savedUserId);
+        this.userEmail.set(savedUserEmail);
+      }
     }
 
     // Sync input signals
@@ -188,6 +196,12 @@ export class App implements OnInit {
       next: (res: any) => {
         this.userId.set(res.app_user_id);
         this.userEmail.set(res.email);
+
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('hermes_user_id', res.app_user_id);
+          localStorage.setItem('hermes_user_email', res.email);
+        }
+
         this.loadFiles();
       },
       error: (e) => alert('Autentificare eșuată. Verifică datele introduse.')
@@ -198,6 +212,11 @@ export class App implements OnInit {
     this.userId.set(null);
     this.userEmail.set('');
     this.files.set([]);
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('hermes_user_id');
+      localStorage.removeItem('hermes_user_email');
+    }
   }
 
   loadFiles() {

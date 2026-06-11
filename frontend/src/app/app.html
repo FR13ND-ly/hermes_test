@@ -11,7 +11,24 @@
           Validare elementară: Database CRUD, 2 File Uploads (S3 Storage vs PVC Volume), Serverless și Crons.
         </p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex items-center gap-3">
+        <!-- Connected Status Badge -->
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900/60 border border-neutral-800/80 text-xs shadow-md transition-all">
+          <ng-container *ngIf="userId()">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-emerald-400 font-medium truncate max-w-[150px] md:max-w-[200px]" [title]="userEmail()">
+              {{ userEmail() }}
+            </span>
+            <button (click)="logout()" class="text-neutral-500 hover:text-red-400 ml-1 transition-colors text-[10px] font-bold" title="Deconectare">
+              ✕
+            </button>
+          </ng-container>
+          <ng-container *ngIf="!userId()">
+            <span class="w-2 h-2 rounded-full bg-neutral-600"></span>
+            <span class="text-neutral-400">Vizitator Neautentificat</span>
+          </ng-container>
+        </div>
+
         <button (click)="showConfig.set(!showConfig())" 
                 class="bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-semibold py-2 px-3 rounded-lg border border-neutral-800 transition-all flex items-center gap-1.5 shadow-md">
           ⚙️ Setări Conexiuni
