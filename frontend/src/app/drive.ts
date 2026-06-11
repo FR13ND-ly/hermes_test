@@ -13,6 +13,16 @@ export class DriveService {
   appApiKey = signal('hm_tff.secret32charsAici'); 
   volumePath = signal('/data');
 
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const origin = window.location.origin;
+      // Daca nu suntem pe porturile locale de dev (4000/4200), folosim origin-ul curent pentru backend API
+      if (!origin.includes('localhost:4000') && !origin.includes('localhost:4200') && !origin.includes('127.0.0.1:4000') && !origin.includes('127.0.0.1:4200')) {
+        this.nodeBackendUrl.set(`${origin}/api`);
+      }
+    }
+  }
+
   loadConfig() {
     this.http.get<any>(`${this.nodeBackendUrl()}/config`).subscribe({
       next: (config) => {

@@ -178,17 +178,18 @@ app.get('/api/files/:id/download', requirePermission('any'), async (req: Request
 
     const storageObjectId = fileCheck.rows[0].storage_object_id;
 
-    // Generăm un token de descărcare prin storage-ul Hermes
-    const hermesRes = await axios.post(
-      `${process.env.HERMES_STORAGE_API_URL}/buckets/generate-token`, 
-      {}, 
-      { headers: { 'X-Hermes-API-Key': process.env.HERMES_API_KEY } }
-    );
+    let storageUrl = process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
+    const storageToken = process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
 
-    const downloadUrl = `${process.env.HERMES_STORAGE_API_URL}/private/${storageObjectId}?token=${hermesRes.data.token}`;
+    // Daca URL-ul se termina in "/storage", il convertim in calea corecta de API: "/api/v1/storage"
+    if (storageUrl.endsWith('/storage')) {
+      storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
+    }
+
+    const downloadUrl = `${storageUrl}/private/${storageObjectId}?token=${storageToken}`;
     res.json({ downloadUrl });
   } catch (error: any) {
-    res.status(500).json({ error: 'Eroare la securizarea link-ului din Hermes Storage.' });
+    res.status(500).json({ error: error.message });
   }
 });
 
