@@ -85,14 +85,19 @@ export class App implements OnInit {
       localStorage.setItem('hermes_api_key', this.apiKeyInput());
     }
 
+    // Load new dynamic variables (like storageUrl, storageToken) from the new backend URL
+    this.driveService.loadConfig();
+
     alert('Configurație actualizată cu succes!');
     this.showConfig.set(false);
 
-    // Refresh active data
-    this.loadItems();
-    this.loadFiles();
-    this.refreshVolumeFiles();
-    this.refreshCronStatus();
+    // Refresh active data after a short delay to allow config to load
+    setTimeout(() => {
+      this.loadItems();
+      this.loadFiles();
+      this.refreshVolumeFiles();
+      this.refreshCronStatus();
+    }, 500);
   }
 
   resetConfigToDefaults() {

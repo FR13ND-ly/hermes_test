@@ -86,8 +86,7 @@ app.get('/api/config', (req: Request, res: Response) => {
     hermesBaaSUrl: process.env.HERMES_BAAS_URL || 'https://api.hermes-os.ro/api/v1/apps/APP_ID_AICI',
     appApiKey: process.env.HERMES_APP_TOKEN || 'hm_tff.secret32charsAici',
     serverlessUrl: process.env.SERVERLESS_REPORT_URL || '',
-    volumePath: VOLUME_MOUNT_PATH,
-    storageToken: process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || ''
+    volumePath: VOLUME_MOUNT_PATH
   });
 });
 
@@ -167,7 +166,79 @@ app.post('/api/files', async (req: Request, res: Response) => {
   }
 });
 
+// Proxy pentru initializare upload in Storage Privat Hermes S3
+app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
+  try {
+    const { fileName, mimeType, sizeBytes } = req.body;
+    let storageUrl = process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
+    const storageToken = process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
+
+    if (storageUrl.endsWith('/storage')) {
+      storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
+    }
+
+    const response = await axios.post(`${storageUrl}/upload/init`, {
+      file_path: `/bucket-test-privat/${fileName}`,
+      mime_type: mimeType,
+      size_bytes: sizeBytes
+    }, {
+      headers: { 'Authorization': `Bearer ${storageToken}` }
+    });
+
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('Error in upload/init proxy:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
+// Proxy pentru upload-ul binar propriu-zis in Storage Privat Hermes S3
+app.post('/api/storage/upload/:id', async (req: Request, res: Response) => {
+  try {
+    const uploadId = req.params.id;
+    let storageUrl = process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
+
+    if (storageUrl.endsWith('/storage')) {
+      storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
+    }
+
+    const url = new URL(storageUrl);
+    const storageOrigin = url.origin;
+    const targetUrl = `${storageOrigin}/api/v1/storage/upload/${uploadId}`;
+
+    const headers: any = {
+      'Content-Type': req.headers['content-type'] || 'application/octet-stream'
+    };
+
+    // Forward the binary stream directly using axios
+    const response = await axios.post(targetUrl, req, {
+      headers,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      responseType: 'json'
+    });
+
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('Error in binary upload proxy:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
+  }
+});
+
 app.get('/api/files/:id/download', async (req: Request, res: Response) => {
+  try {
+    const fileId = req.params.id;
+    const host = req.get('host');
+    const protocol = req.protocol;
+    const downloadUrl = `${protocol}://${host}/api/storage/download/${fileId}`;
+    res.json({ downloadUrl });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Proxy pentru download securizat si privat din Storage Privat Hermes S3
+app.get('/api/storage/download/:id', async (req: Request, res: Response) => {
   try {
     const fileId = req.params.id;
 
@@ -179,15 +250,22 @@ app.get('/api/files/:id/download', async (req: Request, res: Response) => {
     let storageUrl = process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
     const storageToken = process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
 
-    // Daca URL-ul se termina in "/storage", il convertim in calea corecta de API: "/api/v1/storage"
     if (storageUrl.endsWith('/storage')) {
       storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
     }
 
-    const downloadUrl = `${storageUrl}/private/${storageObjectId}?token=${storageToken}`;
-    res.json({ downloadUrl });
+    const targetUrl = `${storageUrl}/private/${storageObjectId}?token=${storageToken}`;
+
+    const response = await axios.get(targetUrl, { responseType: 'stream' });
+
+    if (response.headers['content-type']) res.setHeader('Content-Type', String(response.headers['content-type']));
+    if (response.headers['content-length']) res.setHeader('Content-Length', String(response.headers['content-length']));
+    if (response.headers['content-disposition']) res.setHeader('Content-Disposition', String(response.headers['content-disposition']));
+
+    response.data.pipe(res);
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in download proxy:', error.response?.data || error.message);
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
   }
 });
 

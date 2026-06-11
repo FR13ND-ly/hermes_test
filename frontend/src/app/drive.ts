@@ -12,7 +12,6 @@ export class DriveService {
   nodeBackendUrl = signal('http://localhost:3000/api');
   appApiKey = signal('hm_tff.secret32charsAici'); 
   volumePath = signal('/data');
-  storageToken = signal('');
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -30,7 +29,6 @@ export class DriveService {
         if (config.hermesBaaSUrl) this.hermesBaaSUrl.set(config.hermesBaaSUrl);
         if (config.appApiKey) this.appApiKey.set(config.appApiKey);
         if (config.volumePath) this.volumePath.set(config.volumePath);
-        if (config.storageToken) this.storageToken.set(config.storageToken);
       },
       error: (err) => console.warn('Could not load dynamic configuration from backend:', err)
     });
@@ -74,21 +72,17 @@ export class DriveService {
   }
 
   initUploadSession(fileName: string, mimeType: string, sizeBytes: number): Observable<any> {
-    const headers = new HttpHeaders().set('Authorization', `Bearer ${this.storageToken()}`);
-    const url = new URL(this.hermesBaaSUrl());
-    const origin = url.origin;
-    return this.http.post(`${origin}/api/v1/storage/upload/init`, {
-      file_path: `/bucket-test-privat/${fileName}`,
-      mime_type: mimeType,
-      size_bytes: sizeBytes
-    }, { headers });
+    return this.http.post(`${this.nodeBackendUrl()}/storage/upload/init`, {
+      fileName,
+      mimeType,
+      sizeBytes
+    });
   }
 
   uploadBinaryStream(uploadUrl: string, file: File): Observable<any> {
-    const url = new URL(this.hermesBaaSUrl());
-    const origin = url.origin;
-    return this.http.post(`${origin}/api/v1${uploadUrl}`, file, {
-      headers: new HttpHeaders().set('Content-Type', file.type)
+    const fileId = uploadUrl.split('/').pop();
+    return this.http.post(`${this.nodeBackendUrl()}/storage/upload/${fileId}`, file, {
+      headers: new HttpHeaders().set('Content-Type', file.type || 'application/octet-stream')
     });
   }
 
