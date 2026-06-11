@@ -132,6 +132,79 @@
       </div>
     </section>
 
+    <!-- BAAS AUTHENTICATION SECTION -->
+    <section class="bg-neutral-900 border border-neutral-900 rounded-xl p-6 shadow-xl space-y-4">
+      <div class="flex items-center gap-2 border-b border-neutral-850 pb-3">
+        <span class="text-xl">🔑</span>
+        <h3 class="text-md font-semibold text-neutral-200">Testare BaaS Authentication (Utilizatori & Token-uri)</h3>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Register/Login Form -->
+        <div class="bg-neutral-950 p-4 rounded-xl border border-neutral-850 space-y-3">
+          <div *ngIf="!userId()" class="space-y-3">
+            <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Înregistrare / Autentificare</h4>
+            <div>
+              <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Nume Complet (doar pentru Register)</label>
+              <input type="text" [(ngModel)]="fullName" placeholder="Ex: Popescu Ion" 
+                     class="w-full bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Email</label>
+              <input type="email" [(ngModel)]="email" placeholder="user@exemplu.ro" 
+                     class="w-full bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Parolă</label>
+              <input type="password" [(ngModel)]="password" placeholder="••••••••" 
+                     class="w-full bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button (click)="onRegister()" 
+                      class="flex-1 bg-neutral-800 hover:bg-neutral-750 text-neutral-300 py-1.5 rounded text-xs font-semibold transition-colors border border-neutral-700">
+                Înregistrare
+              </button>
+              <button (click)="onLogin()" 
+                      class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-semibold transition-colors">
+                Login
+              </button>
+            </div>
+          </div>
+
+          <!-- Logged In State -->
+          <div *ngIf="userId()" class="space-y-3">
+            <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Utilizator Autentificat cu Succes!</h4>
+            <div class="space-y-1.5 text-xs text-neutral-300">
+              <p><strong>Email:</strong> {{ userEmail() }}</p>
+              <p class="truncate"><strong>User ID:</strong> <span class="font-mono text-indigo-300">{{ userId() }}</span></p>
+            </div>
+            <button (click)="logout()" 
+                    class="w-full bg-red-950/20 hover:bg-red-950/50 text-red-300 py-1.5 rounded text-xs font-semibold border border-red-900/40 transition-colors">
+              Deconectare
+            </button>
+          </div>
+        </div>
+
+        <!-- Info & Instructions -->
+        <div class="text-xs text-neutral-400 space-y-3 leading-relaxed flex flex-col justify-between">
+          <div class="space-y-2">
+            <p><strong>Cum funcționează:</strong></p>
+            <ul class="list-disc pl-4 space-y-1 text-neutral-500">
+              <li>Când apeși pe <em>Înregistrare</em>, aplicația trimite datele direct către gateway-ul BaaS al platformei Hermes.</li>
+              <li>După înregistrare, utilizatorul va apărea instant în secțiunea <strong>Authentication</strong> din Dashboard-ul Hermes.</li>
+              <li>La <em>Login</em>, platforma validează credențialele și întoarce sesiunea cu ID-ul unic al utilizatorului.</li>
+            </ul>
+          </div>
+          <div class="bg-neutral-950 p-3 rounded-lg border border-neutral-850">
+            <p class="text-[10px] text-neutral-500 font-mono">
+              Gateway activ: <br>
+              <span class="text-indigo-400 truncate block max-w-full">{{ driveService.hermesBaaSUrl() }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- TWO FILE UPLOADS SECTION -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       
