@@ -179,7 +179,7 @@ app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
     const { fileName, mimeType, sizeBytes } = req.body;
 
     const response = await axios.post(`${storageUrl}/upload/init`, {
-      filePath: `/bucket-test-privat/${fileName}`,
+      filePath: `/dsfd/${fileName}`,
       mimeType: mimeType,
       sizeBytes: sizeBytes
     }, {
