@@ -40,7 +40,16 @@ function getMainDatabaseUrl(): string {
   try {
     const urlStr = dbUrl.startsWith('postgresql://') ? dbUrl : 'postgresql://' + dbUrl;
     const parsed = new URL(urlStr);
+    
+    const isContainer = fs.existsSync('/.dockerenv') || process.env.KUBERNETES_SERVICE_HOST;
+    if (isContainer) {
+      parsed.hostname = 'host.docker.internal';
+    } else {
+      parsed.hostname = '127.0.0.1';
+    }
+    parsed.port = '5432';
     parsed.username = 'postgres';
+    parsed.password = 'root';
     parsed.pathname = '/hermes_db';
     return parsed.toString();
   } catch (e) {
