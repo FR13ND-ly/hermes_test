@@ -196,7 +196,14 @@ app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
       headers: { 'Authorization': `Bearer ${storageToken}` }
     });
 
-    res.json(response.data);
+    const data = response.data;
+    res.json({
+      fileId: data.fileId || data.file_id,
+      file_id: data.file_id || data.fileId,
+      status: data.status,
+      uploadUrl: data.uploadUrl || data.upload_url,
+      upload_url: data.upload_url || data.uploadUrl
+    });
   } catch (error: any) {
     const errorDetails: any = {};
     if (error) {
