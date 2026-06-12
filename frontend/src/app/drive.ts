@@ -88,6 +88,10 @@ export class DriveService {
     return this.http.post(`${this.nodeBackendUrl()}/files`, { fileName, storageObjectId });
   }
 
+  deleteFile(id: string): Observable<any> {
+    return this.http.delete(`${this.nodeBackendUrl()}/files/${id}`);
+  }
+
   getSecureDownloadUrl(fileId: string): Observable<any> {
     return this.http.get(`${this.nodeBackendUrl()}/files/${fileId}/download`);
   }

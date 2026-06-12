@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DriveService } from './drive';
+import { switchMap } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -18,6 +19,7 @@ export class App implements OnInit {
   userId = signal<string | null>(null);
   userEmail = signal<string>('');
   files = signal<any[]>([]);
+  activeUploads = signal<any[]>([]);
 
   // Database CRUD signals (test_items table)
   items = signal<any[]>([]);
@@ -230,20 +232,63 @@ export class App implements OnInit {
     const file: File = event.target.files[0];
     if (!file) return;
 
-    this.driveService.initUploadSession(file.name, file.type, file.size).subscribe({
-      next: (initRes: any) => {
-        this.driveService.uploadBinaryStream(initRes.upload_url, file).subscribe({
-          next: (uploadRes: any) => {
-            this.driveService.saveFileMetadata(file.name, uploadRes.id).subscribe(() => {
-              alert('Fișier încărcat în Storage privat S3 și salvat în baza de date!');
-              this.loadFiles();
-            });
-          },
-          error: (err) => alert('Eroare la transferul fișierului: ' + err.message)
-        });
+    // Reset value so the file input can trigger on same file again if canceled
+    event.target.value = '';
+
+    const uploadId = Date.now().toString();
+    const uploadItem = {
+      id: uploadId,
+      fileName: file.name,
+      status: 'Inițializare...',
+      subscription: null as any
+    };
+
+    this.activeUploads.update(uploads => [...uploads, uploadItem]);
+
+    const sub = this.driveService.initUploadSession(file.name, file.type, file.size).pipe(
+      switchMap((initRes: any) => {
+        uploadItem.status = 'Se încarcă...';
+        return this.driveService.uploadBinaryStream(initRes.upload_url, file);
+      }),
+      switchMap((uploadRes: any) => {
+        uploadItem.status = 'Salvare metadate...';
+        return this.driveService.saveFileMetadata(file.name, uploadRes.id);
+      })
+    ).subscribe({
+      next: () => {
+        this.activeUploads.update(uploads => uploads.filter(u => u.id !== uploadId));
+        alert('Fișier încărcat în Storage privat S3 și salvat în baza de date!');
+        this.loadFiles();
       },
-      error: (err) => alert('Eroare inițializare upload: ' + (err.error?.error || err.message))
+      error: (err) => {
+        this.activeUploads.update(uploads => uploads.filter(u => u.id !== uploadId));
+        if (err.name !== 'CanceledError' && err.message !== 'canceled' && err.status !== 0) {
+          alert('Eroare la încărcare: ' + (err.error?.error || err.message));
+        }
+      }
     });
+
+    uploadItem.subscription = sub;
+  }
+
+  cancelUpload(uploadId: string) {
+    const upload = this.activeUploads().find(u => u.id === uploadId);
+    if (upload && upload.subscription) {
+      upload.subscription.unsubscribe();
+      this.activeUploads.update(uploads => uploads.filter(u => u.id !== uploadId));
+    }
+  }
+
+  deleteS3File(id: string) {
+    if (confirm('Sigur vrei să ștergi acest fișier din stocarea S3 și din baza de date?')) {
+      this.driveService.deleteFile(id).subscribe({
+        next: () => {
+          alert('Fișierul a fost șters!');
+          this.loadFiles();
+        },
+        error: (err) => alert('Eroare la ștergerea fișierului: ' + (err.error?.error || err.message))
+      });
+    }
   }
 
   downloadFile(fileId: string) {

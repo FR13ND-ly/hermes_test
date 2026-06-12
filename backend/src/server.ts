@@ -250,6 +250,39 @@ app.post('/api/files', async (req: Request, res: Response) => {
   }
 });
 
+app.delete('/api/files/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Obținem storage_object_id din baza de date
+    const fileResult = await pool.query('SELECT storage_object_id FROM user_files WHERE id = $1', [id]);
+    if (fileResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Fișierul nu a fost găsit în baza de date.' });
+    }
+
+    const storageObjectId = fileResult.rows[0].storage_object_id;
+    const storageUrl = getStorageUrl();
+    const storageToken = process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
+
+    // 2. Trimitem cererea DELETE către platforma de stocare S3
+    try {
+      await axios.delete(`${storageUrl}/objects/${storageObjectId}`, {
+        headers: { 'Authorization': `Bearer ${storageToken}` }
+      });
+      console.log(`✅ [Storage] Obiectul S3 ${storageObjectId} a fost șters din platformă.`);
+    } catch (storageErr: any) {
+      console.error(`⚠️ [Storage] Nu s-a putut șterge obiectul S3 ${storageObjectId} din platformă:`, storageErr.response?.data || storageErr.message);
+      // Chiar dacă ștergerea din S3 eșuează (ex: 404 sau deja șters), continuăm cu ștergerea din DB pentru a nu rămâne blocați
+    }
+
+    // 3. Ștergem înregistrarea din baza de date locală
+    await pool.query('DELETE FROM user_files WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Fișierul a fost șters cu succes.' });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Proxy pentru initializare upload in Storage Privat Hermes S3
 app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
   const storageUrl = getStorageUrl();
