@@ -545,16 +545,6 @@ app.delete('/api/volume/files/:name', async (req: Request, res: Response) => {
 // RUTE CRON
 // ==========================================
 app.post('/api/cron/cleanup', async (req: Request, res: Response) => {
-  const cronToken = req.headers['x-hermes-cron-token'];
-  const expectedToken = process.env.CRON_SECRET_TOKEN;
-
-  if (expectedToken && cronToken !== expectedToken) {
-    return res.status(403).json({ error: 'Doar Hermes Cron Engine poate rula această curățare.' });
-  }
-  if (!expectedToken) {
-    console.warn('⚠️ [Cron Cleanup] CRON_SECRET_TOKEN nu este configurat în mediu. Executare fără validare token.');
-  }
-
   try {
     console.log('🧹 [Cron Webhook] Se șterg fișierele mai vechi de 30 de zile...');
     const oldFiles = await pool.query("SELECT id, storage_object_id FROM user_files WHERE created_at < NOW() - INTERVAL '30 days'");
