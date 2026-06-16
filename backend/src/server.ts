@@ -289,12 +289,17 @@ app.delete('/api/files/:id', async (req: Request, res: Response) => {
 
     const storageObjectId = fileResult.rows[0].storage_object_id;
     const storageUrl = getStorageUrl();
-    const storageToken = process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
+    const storageAppId = process.env.HERMES_APP_ID || '';
+    const storageSecretKey = process.env.HERMES_SECRET_KEY || process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
 
     // 2. Trimitem cererea DELETE către platforma de stocare S3
     try {
       await axios.delete(`${storageUrl}/objects/${storageObjectId}`, {
-        headers: { 'Authorization': `Bearer ${storageToken}` }
+        headers: {
+          'x-hermes-app-id': storageAppId,
+          'x-hermes-secret-key': storageSecretKey,
+          'Authorization': `Bearer ${storageSecretKey}`
+        }
       });
       console.log(`✅ [Storage] Obiectul S3 ${storageObjectId} a fost șters din platformă.`);
     } catch (storageErr: any) {
@@ -313,7 +318,8 @@ app.delete('/api/files/:id', async (req: Request, res: Response) => {
 // Proxy pentru initializare upload in Storage Privat Hermes S3
 app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
   const storageUrl = getStorageUrl();
-  const storageToken = process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
+  const storageAppId = process.env.HERMES_APP_ID || '';
+  const storageSecretKey = process.env.HERMES_SECRET_KEY || process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
 
   console.log('Incoming init request body:', req.body);
 
@@ -325,7 +331,11 @@ app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
       mimeType: mimeType,
       sizeBytes: sizeBytes
     }, {
-      headers: { 'Authorization': `Bearer ${storageToken}` }
+      headers: {
+        'x-hermes-app-id': storageAppId,
+        'x-hermes-secret-key': storageSecretKey,
+        'Authorization': `Bearer ${storageSecretKey}`
+      }
     });
 
     const data = response.data;
@@ -400,9 +410,10 @@ app.get('/api/storage/download/:id', async (req: Request, res: Response) => {
     const storageObjectId = fileCheck.rows[0].storage_object_id;
 
     const storageUrl = getStorageUrl();
-    const storageToken = process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
+    const storageAppId = process.env.HERMES_APP_ID || '';
+    const storageSecretKey = process.env.HERMES_SECRET_KEY || process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
 
-    const targetUrl = `${storageUrl}/private/${storageObjectId}?token=${storageToken}`;
+    const targetUrl = `${storageUrl}/private/${storageObjectId}?token=${storageSecretKey}&app_id=${storageAppId}&secret_key=${storageSecretKey}`;
 
     const response = await axios.get(targetUrl, { responseType: 'stream' });
 
