@@ -340,14 +340,43 @@
         <h3 class="text-lg font-semibold text-neutral-200">Analitice Globale Stack (Serverless Knative)</h3>
       </div>
 
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <!-- Select Metodă -->
+        <div class="col-span-1">
+          <label class="block text-[10px] uppercase font-bold tracking-wider text-neutral-500 mb-1">Metodă</label>
+          <select [value]="serverlessMethod()" (change)="serverlessMethod.set($any($event.target).value)"
+                  class="w-full bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded-lg p-2.5 outline-none focus:border-neutral-700">
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+          </select>
+        </div>
+        <!-- Input URL -->
+        <div class="col-span-3">
+          <label class="block text-[10px] uppercase font-bold tracking-wider text-neutral-500 mb-1">URL Funcție Serverless</label>
+          <input type="text" [value]="serverlessUrl()" (input)="serverlessUrl.set($any($event.target).value)"
+                 placeholder="http://nume-functie-serverless.namespace.svc.cluster.local"
+                 class="w-full bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs rounded-lg p-2.5 outline-none focus:border-neutral-700" />
+        </div>
+      </div>
+
+      <!-- Input Body pentru POST/PUT -->
+      <div *ngIf="serverlessMethod() === 'POST' || serverlessMethod() === 'PUT'">
+        <label class="block text-[10px] uppercase font-bold tracking-wider text-neutral-500 mb-1">Request Body (JSON)</label>
+        <textarea [value]="serverlessBody()" (input)="serverlessBody.set($any($event.target).value)"
+                  placeholder='{ "test": true }' rows="3"
+                  class="w-full bg-neutral-950 border border-neutral-800 text-neutral-300 text-xs font-mono rounded-lg p-2.5 outline-none focus:border-neutral-700"></textarea>
+      </div>
+
       <button (click)="runServerless()" 
               class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2 px-4 rounded-lg shadow transition-colors flex items-center justify-center gap-2">
-        <span>Invoacă Funcția Serverless (Scale-to-Zero)</span>
+        <span>Invoacă Funcția Serverless</span>
       </button>
 
       <div class="relative">
         <div class="absolute right-3 top-3 text-[9px] uppercase font-bold tracking-wider text-neutral-600 bg-neutral-950 px-2 py-0.5 rounded border border-neutral-850">
-          JSON Response
+          Response Console
         </div>
         <pre class="bg-neutral-950 border border-neutral-850 text-emerald-400 font-mono text-[10px] p-4 rounded-lg overflow-x-auto max-h-40 leading-relaxed shadow-inner">{{ serverlessOutput() }}</pre>
       </div>

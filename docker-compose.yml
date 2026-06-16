@@ -2,9 +2,9 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: hermes_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=hermes_db
     ports:
       - "5432:5432"
     volumes:
@@ -15,11 +15,12 @@ services:
     ports:
       - "3000:3000"
     environment:
-      PORT: "3000"
-      NODE_ENV: production
-      DATABASE_URL: postgresql://postgres:root@db:5432/hermes_db
-      VOLUME_MOUNT_PATH: /data
-      HERMES_STORAGE_URL: http://localhost:8000/storage
+      - PORT=3000
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:root@db:5432/hermes_db
+      - VOLUME_MOUNT_PATH=/data
+      - HERMES_STORAGE_URL=http://localhost:8000/storage
+      - HERMES_AUTH_SECRET
     volumes:
       - backend-data:/data
     depends_on:
@@ -30,7 +31,7 @@ services:
     ports:
       - "4000:4000"
     environment:
-      NODE_ENV: production
+      - NODE_ENV=production
     depends_on:
       - backend
 

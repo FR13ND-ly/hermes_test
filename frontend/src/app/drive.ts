@@ -12,6 +12,7 @@ export class DriveService {
   nodeBackendUrl = signal('http://localhost:3000/api');
   appApiKey = signal('hm_tff.secret32charsAici'); 
   volumePath = signal('/data');
+  serverlessUrl = signal('');
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -29,6 +30,7 @@ export class DriveService {
         if (config.hermesBaaSUrl) this.hermesBaaSUrl.set(config.hermesBaaSUrl);
         if (config.appApiKey) this.appApiKey.set(config.appApiKey);
         if (config.volumePath) this.volumePath.set(config.volumePath);
+        if (config.serverlessUrl) this.serverlessUrl.set(config.serverlessUrl);
       },
       error: (err) => console.warn('Could not load dynamic configuration from backend:', err)
     });
@@ -114,6 +116,18 @@ export class DriveService {
   // Serverless Module
   triggerServerlessAnalytics(): Observable<any> {
     return this.http.get(`${this.nodeBackendUrl()}/analytics`);
+  }
+
+  triggerServerlessTest(url: string, method: string, body: string): Observable<any> {
+    let parsedBody = {};
+    if (body) {
+      try {
+        parsedBody = JSON.parse(body);
+      } catch (e) {
+        parsedBody = { raw: body };
+      }
+    }
+    return this.http.post(`${this.nodeBackendUrl()}/analytics/test`, { url, method, body: parsedBody });
   }
 
   // Cron Module

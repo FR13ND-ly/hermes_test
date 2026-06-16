@@ -5,6 +5,7 @@ import { Pool } from 'pg';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
@@ -83,7 +84,7 @@ async function getAppId(): Promise<string> {
 
   // 3. Fallback pentru dezvoltare locala: interogam baza de date centrala
   try {
-    const result = await mainDbPool.query("SELECT id FROM apps WHERE name = $1 LIMIT 1", ['hermes_test']);
+    const result = await mainDbPool.query("SELECT id FROM apps WHERE name = $1 OR name = $2 LIMIT 1", ['backend', 'hermes_test']);
     if (result.rows.length > 0) {
       cachedAppId = result.rows[0].id;
       console.log(`ℹ️ [Auth Proxy] Am obtinut App ID din baza de date: ${cachedAppId}`);
@@ -93,7 +94,7 @@ async function getAppId(): Promise<string> {
     console.warn(`⚠️ [Auth Proxy] Nu s-a putut interoga baza de date centrala pentru App ID:`, dbErr.message);
   }
 
-  throw new Error("Application 'hermes_test' ID could not be resolved (no env vars and DB query failed).");
+  throw new Error("Application 'backend' or 'hermes_test' ID could not be resolved (no env vars and DB query failed).");
 }
 
 app.use(cors());
@@ -145,15 +146,41 @@ const initDatabase = async () => {
 };
 initDatabase().catch(console.error);
 
-// MIDDLEWARE PENTRU BAAS AUTH (Validează x-user-id trimis de Angular)
+// MIDDLEWARE PENTRU BAAS AUTH (Validează tokenul JWT sau x-user-id ca fallback)
 const requirePermission = (requiredRole: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const userId = req.headers['x-user-id'] as string;
-    if (!userId) return res.status(401).json({ error: 'Missing X-User-Id header.' });
-    
-    // Extragem rolurile injectate opțional de proxy-ul Hermes
-    const userRolesHeader = (req.headers['x-user-roles'] as string) || 'user';
-    const roles = userRolesHeader.split(',').map(r => r.trim().toLowerCase());
+    let userId: string | null = null;
+    let roles: string[] = [];
+
+    // 1. Încercăm validarea pe baza token-ului JWT din header-ul Authorization
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const secret = process.env.HERMES_AUTH_SECRET;
+      if (secret) {
+        try {
+          const decoded: any = jwt.verify(token, secret);
+          userId = decoded.sub || decoded.userId;
+          roles = decoded.roles || [];
+        } catch (err) {
+          console.warn('⚠️ [BaaS Auth] Token invalid sau expirat:', err);
+          return res.status(401).json({ error: 'Token invalid sau expirat.' });
+        }
+      } else {
+        console.warn('⚠️ [BaaS Auth] HERMES_AUTH_SECRET nu este definit. Se trece la fallback pe headere.');
+      }
+    }
+
+    // 2. Fallback pe headerele x-user-id / x-user-roles (pentru dev local sau compatibilitate)
+    if (!userId) {
+      userId = req.headers['x-user-id'] as string;
+      const userRolesHeader = (req.headers['x-user-roles'] as string) || 'user';
+      roles = userRolesHeader.split(',').map(r => r.trim().toLowerCase());
+    }
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Missing X-User-Id or invalid Authorization Bearer token.' });
+    }
 
     if (requiredRole !== 'any' && !roles.includes(requiredRole.toLowerCase())) {
       return res.status(403).json({ error: `Forbidden. Necesită rolul: ${requiredRole}` });
@@ -519,8 +546,13 @@ app.delete('/api/volume/files/:name', async (req: Request, res: Response) => {
 // ==========================================
 app.post('/api/cron/cleanup', async (req: Request, res: Response) => {
   const cronToken = req.headers['x-hermes-cron-token'];
-  if (cronToken !== process.env.CRON_SECRET_TOKEN) {
+  const expectedToken = process.env.CRON_SECRET_TOKEN;
+
+  if (expectedToken && cronToken !== expectedToken) {
     return res.status(403).json({ error: 'Doar Hermes Cron Engine poate rula această curățare.' });
+  }
+  if (!expectedToken) {
+    console.warn('⚠️ [Cron Cleanup] CRON_SECRET_TOKEN nu este configurat în mediu. Executare fără validare token.');
   }
 
   try {
@@ -559,6 +591,22 @@ app.get('/api/analytics', async (req: Request, res: Response) => {
     res.json(response.data);
   } catch (error) {
     res.status(503).json({ message: 'Funcția Knative este la rece (0 replici) și se trezește acum...' });
+  }
+});
+
+app.post('/api/analytics/test', async (req: Request, res: Response) => {
+  const { url, method, body } = req.body;
+  if (!url) return res.status(400).json({ error: 'URL-ul este obligatoriu.' });
+  try {
+    const response = await axios({
+      method: method || 'GET',
+      url,
+      data: body || {},
+      timeout: 10000
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    res.status(error.response?.status || 500).json(error.response?.data || { error: error.message });
   }
 });
 

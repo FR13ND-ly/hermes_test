@@ -29,6 +29,9 @@ export class App implements OnInit {
 
   // Serverless Knative signals
   serverlessOutput = signal<string>('Funcția Knative este în starea "idle" (0 replici)...');
+  serverlessUrl = signal<string>('');
+  serverlessMethod = signal<string>('GET');
+  serverlessBody = signal<string>('');
 
   // Volume (PVC) signals
   volumeFiles = signal<any[]>([]);
@@ -87,6 +90,9 @@ export class App implements OnInit {
       this.loadFiles();
       this.refreshVolumeFiles();
       this.refreshCronStatus();
+      if (this.driveService.serverlessUrl()) {
+        this.serverlessUrl.set(this.driveService.serverlessUrl());
+      }
     }, 1000);
   }
 
@@ -337,12 +343,16 @@ export class App implements OnInit {
   // ==========================================
   runServerless() {
     this.serverlessOutput.set('Invocare HTTP Knative... Serverul pornește la rece pod-ul efemer...');
-    this.driveService.triggerServerlessAnalytics().subscribe({
+    this.driveService.triggerServerlessTest(
+      this.serverlessUrl(),
+      this.serverlessMethod(),
+      this.serverlessBody()
+    ).subscribe({
       next: (data) => {
         this.serverlessOutput.set(JSON.stringify(data, null, 2));
       },
       error: (err) => {
-        this.serverlessOutput.set('Eroare invocare serverless: ' + (err.error?.message || err.message));
+        this.serverlessOutput.set('Eroare invocare serverless: ' + JSON.stringify(err.error || err.message, null, 2));
       }
     });
   }
