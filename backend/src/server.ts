@@ -321,13 +321,22 @@ app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
   const storageAppId = process.env.HERMES_APP_ID || '';
   const storageSecretKey = process.env.HERMES_SECRET_KEY || process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
 
+  // Determinam dinamic slug-ul bucket-ului din mediul proiectului (ex: BUCKET_FSAD_SECRET_KEY -> fsad)
+  let bucketSlug = 'dsfd';
+  for (const key of Object.keys(process.env)) {
+    if (key.startsWith('BUCKET_') && key.endsWith('_SECRET_KEY')) {
+      bucketSlug = key.substring(7, key.length - 11).toLowerCase();
+      break;
+    }
+  }
+
   console.log('Incoming init request body:', req.body);
 
   try {
     const { fileName, mimeType, sizeBytes } = req.body;
 
     const response = await axios.post(`${storageUrl}/upload/init`, {
-      filePath: `/dsfd/${fileName}`,
+      filePath: `/${bucketSlug}/${fileName}`,
       mimeType: mimeType,
       sizeBytes: sizeBytes
     }, {

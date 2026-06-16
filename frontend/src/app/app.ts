@@ -349,6 +349,7 @@ export class App implements OnInit {
       this.serverlessBody()
     ).subscribe({
       next: (data) => {
+        console.log('Răspuns serverless:', data);
         this.serverlessOutput.set(JSON.stringify(data, null, 2));
       },
       error: (err) => {
