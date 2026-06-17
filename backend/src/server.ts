@@ -64,8 +64,8 @@ let cachedAppId: string | null = null;
 async function getAppId(): Promise<string> {
   if (cachedAppId) return cachedAppId;
 
-  // 1. Verificam daca ID-ul este setat direct ca variabila de mediu
-  if (process.env.HERMES_APP_ID) {
+  // 1. Verificam daca ID-ul este setat direct ca variabila de mediu si nu este un credential de bucket (hsk_)
+  if (process.env.HERMES_APP_ID && !process.env.HERMES_APP_ID.startsWith('hsk_')) {
     cachedAppId = process.env.HERMES_APP_ID;
     console.log(`ℹ️ [Auth Proxy] Folosim App ID din HERMES_APP_ID: ${cachedAppId}`);
     return cachedAppId;
@@ -277,6 +277,30 @@ app.post('/api/files', async (req: Request, res: Response) => {
   }
 });
 
+function getBucketCredentials() {
+  let appId = '';
+  let secretKey = '';
+
+  for (const key of Object.keys(process.env)) {
+    if (key.startsWith('BUCKET_') && key.endsWith('_SECRET_KEY')) {
+      const slug = key.substring(7, key.length - 11).toUpperCase();
+      secretKey = process.env[key] || '';
+      appId = process.env[`BUCKET_${slug}_APP_ID`] || '';
+      break;
+    }
+  }
+
+  if (!secretKey) {
+    secretKey = process.env.HERMES_SECRET_KEY || process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
+    const envAppId = process.env.HERMES_APP_ID || '';
+    if (envAppId.startsWith('hsk_')) {
+      appId = envAppId;
+    }
+  }
+
+  return { appId, secretKey };
+}
+
 app.delete('/api/files/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -289,8 +313,7 @@ app.delete('/api/files/:id', async (req: Request, res: Response) => {
 
     const storageObjectId = fileResult.rows[0].storage_object_id;
     const storageUrl = getStorageUrl();
-    const storageAppId = process.env.HERMES_APP_ID || '';
-    const storageSecretKey = process.env.HERMES_SECRET_KEY || process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
+    const { appId: storageAppId, secretKey: storageSecretKey } = getBucketCredentials();
 
     // 2. Trimitem cererea DELETE către platforma de stocare S3
     try {
@@ -318,8 +341,7 @@ app.delete('/api/files/:id', async (req: Request, res: Response) => {
 // Proxy pentru initializare upload in Storage Privat Hermes S3
 app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
   const storageUrl = getStorageUrl();
-  const storageAppId = process.env.HERMES_APP_ID || '';
-  const storageSecretKey = process.env.HERMES_SECRET_KEY || process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
+  const { appId: storageAppId, secretKey: storageSecretKey } = getBucketCredentials();
 
   // Determinam dinamic slug-ul bucket-ului din mediul proiectului (ex: BUCKET_FSAD_SECRET_KEY -> fsad)
   let bucketSlug = 'dsfd';
@@ -419,8 +441,7 @@ app.get('/api/storage/download/:id', async (req: Request, res: Response) => {
     const storageObjectId = fileCheck.rows[0].storage_object_id;
 
     const storageUrl = getStorageUrl();
-    const storageAppId = process.env.HERMES_APP_ID || '';
-    const storageSecretKey = process.env.HERMES_SECRET_KEY || process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
+    const { appId: storageAppId, secretKey: storageSecretKey } = getBucketCredentials();
 
     const targetUrl = `${storageUrl}/private/${storageObjectId}?token=${storageSecretKey}&app_id=${storageAppId}&secret_key=${storageSecretKey}`;
 
@@ -607,10 +628,20 @@ app.get('/api/analytics', async (req: Request, res: Response) => {
 app.post('/api/analytics/test', async (req: Request, res: Response) => {
   const { url, method, body } = req.body;
   if (!url) return res.status(400).json({ error: 'URL-ul este obligatoriu.' });
+
+  let targetUrl = url;
+  if (targetUrl.includes('localhost') || targetUrl.includes('127.0.0.1')) {
+    const isContainer = fs.existsSync('/.dockerenv') || process.env.KUBERNETES_SERVICE_HOST;
+    if (isContainer) {
+      targetUrl = targetUrl.replace('localhost', 'host.docker.internal').replace('127.0.0.1', 'host.docker.internal');
+      console.log(`ℹ️ [Serverless Proxy] Rescris ${url} -> ${targetUrl} din container.`);
+    }
+  }
+
   try {
     const response = await axios({
       method: method || 'GET',
-      url,
+      url: targetUrl,
       data: body || {},
       timeout: 10000
     });

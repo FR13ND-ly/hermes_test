@@ -21,6 +21,10 @@ services:
       - VOLUME_MOUNT_PATH=/data
       - HERMES_STORAGE_URL=http://localhost:8000/storage
       - HERMES_AUTH_SECRET
+      - HERMES_APP_ID
+      - HERMES_SECRET_KEY
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - backend-data:/data
     depends_on:
