@@ -47,6 +47,7 @@ app.use('/api', (req, res) => {
     },
   );
   proxyReq.on('error', (err) => {
+    console.error('Eroare la proxy către backend:', process.env['BACKEND_URL']);
     console.log(backendUrl)
     console.error('[proxy /api] eroare către backend:', err);
     if (!res.headersSent) {
