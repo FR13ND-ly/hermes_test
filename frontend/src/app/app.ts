@@ -12,14 +12,17 @@ import { switchMap } from 'rxjs';
 export class App implements OnInit {
   public driveService = inject(DriveService);
 
-  // User session signals (for S3 storage BaaS testing)
-  email = signal('');
+  // User session signals (Hermes BaaS: per-app identifier + password)
+  identifier = signal('');
   password = signal('');
-  fullName = signal('');
   userId = signal<string | null>(null);
-  userEmail = signal<string>('');
+  userIdentifier = signal<string>('');
   files = signal<any[]>([]);
   activeUploads = signal<any[]>([]);
+
+  // Toast notifications (replace the native alert() popups)
+  toasts = signal<{ id: number; message: string; type: 'success' | 'error' | 'info' }[]>([]);
+  private toastSeq = 0;
 
   // Database CRUD signals (test_items table)
   items = signal<any[]>([]);
@@ -45,6 +48,24 @@ export class App implements OnInit {
   apiKeyInput = signal('');
   backendUrlInput = signal('');
 
+  // ==========================================
+  // TOAST NOTIFICATIONS
+  // ==========================================
+  notify(message: string, type: 'success' | 'error' | 'info' = 'info') {
+    const id = ++this.toastSeq;
+    this.toasts.update(t => [...t, { id, message, type }]);
+    setTimeout(() => this.dismissToast(id), 4500);
+  }
+
+  dismissToast(id: number) {
+    this.toasts.update(t => t.filter(x => x.id !== id));
+  }
+
+  /** Pull a readable message out of an HTTP error (Hermes returns { error: { message } }). */
+  private errMsg(e: any): string {
+    return e?.error?.error?.message || e?.error?.error || e?.error?.message || e?.message || 'Eroare necunoscută';
+  }
+
   ngOnInit() {
     // Load local storage overrides if in browser
     if (typeof window !== 'undefined') {
@@ -65,10 +86,10 @@ export class App implements OnInit {
 
       // Load user session if saved
       const savedUserId = localStorage.getItem('hermes_user_id');
-      const savedUserEmail = localStorage.getItem('hermes_user_email');
-      if (savedUserId && savedUserEmail) {
+      const savedIdentifier = localStorage.getItem('hermes_user_identifier');
+      if (savedUserId && savedIdentifier) {
         this.userId.set(savedUserId);
-        this.userEmail.set(savedUserEmail);
+        this.userIdentifier.set(savedIdentifier);
       }
     }
 
@@ -85,7 +106,7 @@ export class App implements OnInit {
       this.baasUrlInput.set(this.driveService.hermesBaaSUrl());
       this.apiKeyInput.set(this.driveService.appApiKey());
       this.backendUrlInput.set(this.driveService.nodeBackendUrl());
-      
+
       this.loadItems();
       this.loadFiles();
       this.refreshVolumeFiles();
@@ -110,7 +131,7 @@ export class App implements OnInit {
     // Load new dynamic variables (like storageUrl, storageToken) from the new backend URL
     this.driveService.loadConfig();
 
-    alert('Configurație actualizată cu succes!');
+    this.notify('Configurație actualizată cu succes!', 'success');
     this.showConfig.set(false);
 
     // Refresh active data after a short delay to allow config to load
@@ -143,7 +164,7 @@ export class App implements OnInit {
 
   addItem() {
     if (!this.itemTitle().trim()) {
-      alert('Te rog introdu un titlu.');
+      this.notify('Te rog introdu un titlu.', 'error');
       return;
     }
     this.driveService.createItem(this.itemTitle(), this.itemDesc()).subscribe({
@@ -151,8 +172,9 @@ export class App implements OnInit {
         this.itemTitle.set('');
         this.itemDesc.set('');
         this.loadItems();
+        this.notify('Resursă adăugată în baza de date.', 'success');
       },
-      error: (e) => alert('Eroare la adăugarea itemului: ' + e.message)
+      error: (e) => this.notify('Eroare la adăugarea itemului: ' + this.errMsg(e), 'error')
     });
   }
 
@@ -169,8 +191,9 @@ export class App implements OnInit {
       next: () => {
         this.cancelEdit();
         this.loadItems();
+        this.notify('Modificările au fost salvate.', 'success');
       },
-      error: (e) => alert('Eroare la salvarea modificărilor: ' + e.message)
+      error: (e) => this.notify('Eroare la salvarea modificărilor: ' + this.errMsg(e), 'error')
     });
   }
 
@@ -183,8 +206,11 @@ export class App implements OnInit {
   deleteItem(id: string) {
     if (confirm('Sigur vrei să ștergi acest element din baza de date?')) {
       this.driveService.deleteItem(id).subscribe({
-        next: () => this.loadItems(),
-        error: (e) => alert('Eroare la ștergerea elementului: ' + e.message)
+        next: () => {
+          this.loadItems();
+          this.notify('Element șters.', 'success');
+        },
+        error: (e) => this.notify('Eroare la ștergerea elementului: ' + this.errMsg(e), 'error')
       });
     }
   }
@@ -193,38 +219,53 @@ export class App implements OnInit {
   // BAAS AUTHENTICATION & STORAGE S3
   // ==========================================
   onRegister() {
-    this.driveService.register(this.email(), this.password(), this.fullName()).subscribe({
-      next: () => alert('Utilizator înregistrat cu succes în BaaS!'),
-      error: (e) => alert('Eroare înregistrare: ' + (e.error?.error || e.message))
+    if (!this.identifier().trim()) {
+      this.notify('Introdu un identificator.', 'error');
+      return;
+    }
+    if (this.password().length < 8) {
+      this.notify('Parola trebuie să aibă cel puțin 8 caractere.', 'error');
+      return;
+    }
+    this.driveService.register(this.identifier().trim(), this.password()).subscribe({
+      next: () => this.notify('Utilizator înregistrat cu succes în BaaS! Acum te poți autentifica.', 'success'),
+      error: (e) => this.notify('Eroare înregistrare: ' + this.errMsg(e), 'error')
     });
   }
 
   onLogin() {
-    this.driveService.login(this.email(), this.password()).subscribe({
+    this.driveService.login(this.identifier().trim(), this.password()).subscribe({
       next: (res: any) => {
-        this.userId.set(res.app_user_id);
-        this.userEmail.set(res.email);
+        this.userId.set(res.appUserId);
+        this.userIdentifier.set(res.identifier);
 
         if (typeof window !== 'undefined') {
-          localStorage.setItem('hermes_user_id', res.app_user_id);
-          localStorage.setItem('hermes_user_email', res.email);
+          localStorage.setItem('hermes_user_id', res.appUserId);
+          localStorage.setItem('hermes_user_identifier', res.identifier);
+          if (res.accessToken) localStorage.setItem('hermes_access_token', res.accessToken);
+          if (res.refreshToken) localStorage.setItem('hermes_refresh_token', res.refreshToken);
         }
 
+        this.password.set('');
+        this.notify('Autentificat ca ' + res.identifier, 'success');
         this.loadFiles();
       },
-      error: (e) => alert('Autentificare eșuată. Verifică datele introduse.')
+      error: () => this.notify('Autentificare eșuată. Verifică datele introduse.', 'error')
     });
   }
 
   logout() {
     this.userId.set(null);
-    this.userEmail.set('');
+    this.userIdentifier.set('');
     this.files.set([]);
 
     if (typeof window !== 'undefined') {
       localStorage.removeItem('hermes_user_id');
-      localStorage.removeItem('hermes_user_email');
+      localStorage.removeItem('hermes_user_identifier');
+      localStorage.removeItem('hermes_access_token');
+      localStorage.removeItem('hermes_refresh_token');
     }
+    this.notify('Te-ai deconectat.', 'info');
   }
 
   loadFiles() {
@@ -263,13 +304,13 @@ export class App implements OnInit {
     ).subscribe({
       next: () => {
         this.activeUploads.update(uploads => uploads.filter(u => u.id !== uploadId));
-        alert('Fișier încărcat în Storage privat S3 și salvat în baza de date!');
+        this.notify('Fișier încărcat în Storage privat S3 și salvat în baza de date!', 'success');
         this.loadFiles();
       },
       error: (err) => {
         this.activeUploads.update(uploads => uploads.filter(u => u.id !== uploadId));
         if (err.name !== 'CanceledError' && err.message !== 'canceled' && err.status !== 0) {
-          alert('Eroare la încărcare: ' + (err.error?.error || err.message));
+          this.notify('Eroare la încărcare: ' + this.errMsg(err), 'error');
         }
       }
     });
@@ -289,10 +330,10 @@ export class App implements OnInit {
     if (confirm('Sigur vrei să ștergi acest fișier din stocarea S3 și din baza de date?')) {
       this.driveService.deleteFile(id).subscribe({
         next: () => {
-          alert('Fișierul a fost șters!');
+          this.notify('Fișierul a fost șters!', 'success');
           this.loadFiles();
         },
-        error: (err) => alert('Eroare la ștergerea fișierului: ' + (err.error?.error || err.message))
+        error: (err) => this.notify('Eroare la ștergerea fișierului: ' + this.errMsg(err), 'error')
       });
     }
   }
@@ -302,7 +343,7 @@ export class App implements OnInit {
       next: (res: any) => {
         window.open(res.downloadUrl, '_blank');
       },
-      error: (err) => alert('Eroare descărcare fișier: ' + err.message)
+      error: (err) => this.notify('Eroare descărcare fișier: ' + this.errMsg(err), 'error')
     });
   }
 
@@ -315,18 +356,21 @@ export class App implements OnInit {
 
     this.driveService.uploadFileToVolume(file).subscribe({
       next: () => {
-        alert('Fișier încărcat direct pe volumul persistent (PVC)!');
+        this.notify('Fișier încărcat direct pe volumul persistent (PVC)!', 'success');
         this.refreshVolumeFiles();
       },
-      error: (e) => alert('Eroare la scrierea pe volum: ' + (e.error?.error || e.message))
+      error: (e) => this.notify('Eroare la scrierea pe volum: ' + this.errMsg(e), 'error')
     });
   }
 
   deleteVolumeFile(name: string) {
     if (confirm(`Sigur vrei să ștergi fișierul "${name}" de pe volum?`)) {
       this.driveService.deleteVolumeFile(name).subscribe({
-        next: () => this.refreshVolumeFiles(),
-        error: (e) => alert('Eroare la ștergerea fișierului de pe volum: ' + e.message)
+        next: () => {
+          this.refreshVolumeFiles();
+          this.notify('Fișier șters de pe volum.', 'success');
+        },
+        error: (e) => this.notify('Eroare la ștergerea fișierului de pe volum: ' + this.errMsg(e), 'error')
       });
     }
   }

@@ -144,7 +144,26 @@ const initDatabase = async () => {
   await pool.query(createTestItemsTable);
   console.log('✅ [Postgres] Toate tabelele necesare au fost verificate/create.');
 };
-initDatabase().catch(console.error);
+// Pod-ul poate porni înainte ca rutarea de rețea către serviciul DB să fie
+// complet gata (race la boot în k8s). Reîncercăm cu backoff în loc să murim la
+// prima eroare — altfel un blip tranzitoriu rămâne "lipit" până la un redeploy.
+const runInitWithRetry = async () => {
+  const maxAttempts = 30;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await initDatabase();
+      return;
+    } catch (err: any) {
+      const delayMs = Math.min(1000 * attempt, 5000);
+      console.warn(
+        `⏳ [Postgres] Conexiune indisponibilă (încercarea ${attempt}/${maxAttempts}, ${err?.code || err?.message}). Reîncerc în ${delayMs}ms...`,
+      );
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  console.error('❌ [Postgres] Nu m-am putut conecta/inițializa DB-ul după toate încercările.');
+};
+runInitWithRetry();
 
 // MIDDLEWARE PENTRU BAAS AUTH (Validează tokenul JWT sau x-user-id ca fallback)
 const requirePermission = (requiredRole: string) => {
@@ -461,19 +480,16 @@ app.get('/api/storage/download/:id', async (req: Request, res: Response) => {
 // Proxy pentru register in BaaS-ul platformei Hermes
 app.post('/api/auth/register', async (req: Request, res: Response) => {
   try {
-    const { email, password_hash, full_name } = req.body;
+    const { identifier, password } = req.body;
     const appId = await getAppId();
     const platformOrigin = getPlatformOrigin();
     const targetUrl = `${platformOrigin}/api/v1/apps/${appId}/auth/register`;
-    const appApiKey = process.env.HERMES_APP_TOKEN || 'hm_tff.secret32charsAici';
 
     const response = await axios.post(targetUrl, {
-      email,
-      passwordHash: password_hash,
-      fullName: full_name
+      identifier,
+      password
     }, {
       headers: {
-        'X-Hermes-App-Token': appApiKey,
         'Content-Type': 'application/json'
       }
     });
@@ -488,18 +504,16 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
 // Proxy pentru login in BaaS-ul platformei Hermes
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
-    const { email, password_hash } = req.body;
+    const { identifier, password } = req.body;
     const appId = await getAppId();
     const platformOrigin = getPlatformOrigin();
     const targetUrl = `${platformOrigin}/api/v1/apps/${appId}/auth/login`;
-    const appApiKey = process.env.HERMES_APP_TOKEN || 'hm_tff.secret32charsAici';
 
     const response = await axios.post(targetUrl, {
-      email,
-      passwordHash: password_hash
+      identifier,
+      password
     }, {
       headers: {
-        'X-Hermes-App-Token': appApiKey,
         'Content-Type': 'application/json'
       }
     });

@@ -36,17 +36,13 @@ export class DriveService {
     });
   }
 
-  // BaaS Authentication APIs
-  register(email: string, passwordHash: string, fullName: string): Observable<any> {
-    return this.http.post(`${this.nodeBackendUrl()}/auth/register`, {
-      email,
-      password_hash: passwordHash,
-      full_name: fullName
-    });
+  // BaaS Authentication APIs (Hermes per-app BaaS: identifier + password)
+  register(identifier: string, password: string): Observable<any> {
+    return this.http.post(`${this.nodeBackendUrl()}/auth/register`, { identifier, password });
   }
 
-  login(email: string, passwordHash: string): Observable<any> {
-    return this.http.post(`${this.nodeBackendUrl()}/auth/login`, { email, password_hash: passwordHash });
+  login(identifier: string, password: string): Observable<any> {
+    return this.http.post(`${this.nodeBackendUrl()}/auth/login`, { identifier, password });
   }
 
   // Database CRUD (test_items)

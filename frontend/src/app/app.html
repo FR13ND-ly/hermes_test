@@ -1,4 +1,19 @@
 <main class="min-h-screen bg-neutral-950 text-neutral-100 antialiased selection:bg-indigo-500 selection:text-white py-12 px-4 font-sans">
+
+  <!-- TOAST NOTIFICATIONS (înlocuiesc alert()) -->
+  <div class="fixed top-4 right-4 z-50 flex flex-col gap-2 w-[320px] max-w-[calc(100vw-2rem)]">
+    @for (t of toasts(); track t.id) {
+      <div (click)="dismissToast(t.id)"
+           class="flex items-start gap-2 px-3.5 py-2.5 rounded-lg border shadow-xl backdrop-blur-sm cursor-pointer text-xs transition-all"
+           [class]="t.type === 'success' ? 'bg-emerald-950/80 border-emerald-700/50 text-emerald-200'
+                  : t.type === 'error'   ? 'bg-red-950/80 border-red-700/50 text-red-200'
+                  : 'bg-neutral-900/90 border-neutral-700/50 text-neutral-200'">
+        <span class="mt-0.5 font-bold">{{ t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ' }}</span>
+        <span class="flex-1 leading-snug">{{ t.message }}</span>
+      </div>
+    }
+  </div>
+
   <div class="max-w-4xl mx-auto space-y-8">
     
     <!-- HEADER -->
@@ -16,8 +31,8 @@
         <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900/60 border border-neutral-800/80 text-xs shadow-md transition-all">
           <ng-container *ngIf="userId()">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="text-emerald-400 font-medium truncate max-w-[150px] md:max-w-[200px]" [title]="userEmail()">
-              {{ userEmail() }}
+            <span class="text-emerald-400 font-medium truncate max-w-[150px] md:max-w-[200px]" [title]="userIdentifier()">
+              {{ userIdentifier() }}
             </span>
             <button (click)="logout()" class="text-neutral-500 hover:text-red-400 ml-1 transition-colors text-[10px] font-bold" title="Deconectare">
               ✕
@@ -162,19 +177,16 @@
           <div *ngIf="!userId()" class="space-y-3">
             <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Înregistrare / Autentificare</h4>
             <div>
-              <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Nume Complet (doar pentru Register)</label>
-              <input type="text" [(ngModel)]="fullName" placeholder="Ex: Popescu Ion" 
+              <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Identificator</label>
+              <input type="text" [(ngModel)]="identifier" placeholder="email, username, telefon..."
                      class="w-full bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
-            </div>
-            <div>
-              <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Email</label>
-              <input type="email" [(ngModel)]="email" placeholder="user@exemplu.ro" 
-                     class="w-full bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
+              <p class="text-[9px] text-neutral-600 mt-1">Orice handle unic per aplicație — Hermes îl tratează opac.</p>
             </div>
             <div>
               <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Parolă</label>
-              <input type="password" [(ngModel)]="password" placeholder="••••••••" 
+              <input type="password" [(ngModel)]="password" placeholder="••••••••"
                      class="w-full bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
+              <p class="text-[9px] text-neutral-600 mt-1">Minim 8 caractere.</p>
             </div>
             <div class="flex gap-2 pt-1">
               <button (click)="onRegister()" 
@@ -192,7 +204,7 @@
           <div *ngIf="userId()" class="space-y-3">
             <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Utilizator Autentificat cu Succes!</h4>
             <div class="space-y-1.5 text-xs text-neutral-300">
-              <p><strong>Email:</strong> {{ userEmail() }}</p>
+              <p><strong>Identificator:</strong> {{ userIdentifier() }}</p>
               <p class="truncate"><strong>User ID:</strong> <span class="font-mono text-indigo-300">{{ userId() }}</span></p>
             </div>
             <button (click)="logout()" 
