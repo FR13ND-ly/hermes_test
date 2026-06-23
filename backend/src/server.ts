@@ -14,15 +14,9 @@ const PORT = process.env.PORT || 3000;
 const VOLUME_MOUNT_PATH = process.env.VOLUME_MOUNT_PATH || '/data';
 
 function getStorageUrl(): string {
-  let storageUrl = process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
-  if (storageUrl.endsWith('/storage')) {
-    storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
-  }
-  const isContainer = fs.existsSync('/.dockerenv') || process.env.KUBERNETES_SERVICE_HOST;
-  if (isContainer && storageUrl.includes('localhost')) {
-    storageUrl = storageUrl.replace('localhost', 'host.docker.internal');
-  }
-  return storageUrl;
+  // Hermes injects HERMES_STORAGE_URL (the full storage API endpoint) into the env
+  // pool when a bucket is linked — use it as-is. localhost is a dev-only fallback.
+  return process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
 }
 
 function getPlatformOrigin(): string {
