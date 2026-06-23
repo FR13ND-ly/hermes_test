@@ -20,10 +20,11 @@ function getStorageUrl(): string {
 }
 
 function getPlatformOrigin(): string {
-  const storageUrl = getStorageUrl();
+  // Prefer the BaaS API URL (always present when BaaS is on) so auth doesn't depend
+  // on storage being linked; fall back to the storage URL, then localhost (dev).
+  const url = process.env.HERMES_BAAS_URL || process.env.HERMES_AUTH_API_URL || getStorageUrl();
   try {
-    const parsed = new URL(storageUrl);
-    return parsed.origin;
+    return new URL(url).origin;
   } catch (e) {
     return 'http://localhost:8000';
   }
