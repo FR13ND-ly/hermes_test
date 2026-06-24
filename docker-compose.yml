@@ -23,7 +23,7 @@ services:
       - PORT=3000
       - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:root@db:5432/hermes_db
-      - REDIS_URL=redis://redis:6379
+      - REDIS_DATABSE_URL=redis://redis:6379
       - VOLUME_MOUNT_PATH=/data
       - HERMES_STORAGE_URL=http://localhost:8000/storage
       - HERMES_AUTH_SECRET=""
