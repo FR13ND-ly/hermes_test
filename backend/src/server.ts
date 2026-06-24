@@ -15,8 +15,6 @@ const PORT = process.env.PORT || 3000;
 const VOLUME_MOUNT_PATH = process.env.VOLUME_MOUNT_PATH || '/data';
 
 function getStorageUrl(): string {
-  if (process.env.HERMES_STORAGE_URL) return process.env.HERMES_STORAGE_URL;
-  if (process.env.HERMES_STORAGE_API_URL) return process.env.HERMES_STORAGE_API_URL;
   if (process.env.HERMES_PLATFORM_URL) {
     return `${process.env.HERMES_PLATFORM_URL}/api/v1/storage`;
   }
@@ -27,12 +25,7 @@ function getPlatformOrigin(): string {
   if (process.env.HERMES_PLATFORM_URL) {
     return process.env.HERMES_PLATFORM_URL;
   }
-  const url = process.env.HERMES_BAAS_URL || process.env.HERMES_AUTH_API_URL || getStorageUrl();
-  try {
-    return new URL(url).origin;
-  } catch (e) {
-    return 'http://localhost:8000';
-  }
+  return 'http://localhost:8000';
 }
 
 function getMainDatabaseUrl(): string {
@@ -299,10 +292,9 @@ const requirePermission = (requiredRole: string) => {
 // ==========================================
 app.get('/api/config', async (req: Request, res: Response) => {
   const config = await getBaaSConfig();
-  const hermesBaaSUrl = process.env.HERMES_BAAS_URL || 
-    (process.env.HERMES_PLATFORM_URL 
-      ? `${process.env.HERMES_PLATFORM_URL}/api/v1/apps/${config.appId}` 
-      : `https://api.hermes-os.ro/api/v1/apps/${config.appId || 'APP_ID_AICI'}`);
+  const hermesBaaSUrl = process.env.HERMES_PLATFORM_URL 
+    ? `${process.env.HERMES_PLATFORM_URL}/api/v1/apps/${config.appId}` 
+    : `http://localhost:8000/api/v1/apps/${config.appId || 'APP_ID_AICI'}`;
   res.json({
     hermesBaaSUrl,
     appApiKey: config.apiKey || 'hm_tff.secret32charsAici',

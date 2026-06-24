@@ -6,9 +6,6 @@ import fs from 'fs';
 dotenv.config();
 
 function getStorageUrl(): string {
-  if (process.env.HERMES_STORAGE_URL) return process.env.HERMES_STORAGE_URL;
-  if (process.env.HERMES_STORAGE_API_URL) return process.env.HERMES_STORAGE_API_URL;
-  
   if (process.env.HERMES_PLATFORM_URL) {
     return `${process.env.HERMES_PLATFORM_URL}/api/v1/storage`;
   }
