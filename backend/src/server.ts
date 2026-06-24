@@ -73,9 +73,12 @@ function getRedisUrl(): string | null {
 
 let redisClient: RedisClientType | null = null;
 async function getRedis(): Promise<RedisClientType> {
-  const url = getRedisUrl();
+  let url = getRedisUrl();
   if (!url) {
     throw new Error('Niciun Redis legat: nu am găsit un env redis:// (leagă o bază Redis la proiect).');
+  }
+  if (url.startsWith('redis://:')) {
+    url = url.replace('redis://:', 'redis://default:');
   }
   if (!redisClient) {
     redisClient = createClient({ url });
