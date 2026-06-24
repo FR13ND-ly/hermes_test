@@ -25,13 +25,15 @@ services:
       - DATABASE_URL=postgresql://postgres:root@db:5432/hermes_db
       - REDIS_URL=redis://redis:6379
       - VOLUME_MOUNT_PATH=/data
-      - HERMES_STORAGE_URL=http://localhost:8000/storage
-      - HERMES_BAAS_URL=""
-      - HERMES_AUTH_APP_ID=""
-      - HERMES_AUTH_SECRET=""
-      - HERMES_STORAGE_APP_ID=""
-      - HERMES_STORAGE_SECRET_KEY=""
-      - HERMES_APP_TOKEN=""
+      - HERMES_PLATFORM_URL
+      - HERMES_STORAGE_URL
+      - HERMES_STORAGE_API_URL
+      - HERMES_BAAS_URL
+      - HERMES_AUTH_APP_ID
+      - HERMES_AUTH_SECRET
+      - HERMES_STORAGE_APP_ID
+      - HERMES_STORAGE_SECRET_KEY
+      - HERMES_APP_TOKEN
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
