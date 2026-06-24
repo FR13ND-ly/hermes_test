@@ -23,12 +23,13 @@ services:
       - PORT=3000
       - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:root@db:5432/hermes_db
-      - REDIS_DATABSE_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6379
       - VOLUME_MOUNT_PATH=/data
       - HERMES_STORAGE_URL=http://localhost:8000/storage
+      - HERMES_AUTH_APP_ID=""
       - HERMES_AUTH_SECRET=""
-      - HERMES_APP_ID=""
-      - HERMES_SECRET_KEY=""
+      - HERMES_STORAGE_APP_ID=""
+      - HERMES_STORAGE_SECRET_KEY=""
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

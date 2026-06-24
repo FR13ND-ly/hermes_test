@@ -398,9 +398,9 @@ function getBucketCredentials() {
   }
 
   if (!secretKey) {
-    secretKey = process.env.HERMES_SECRET_KEY || process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
-    const envAppId = process.env.HERMES_APP_ID || '';
-    if (envAppId.startsWith('hsk_')) {
+    secretKey = process.env.HERMES_STORAGE_SECRET_KEY || process.env.HERMES_SECRET_KEY || process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
+    const envAppId = process.env.HERMES_STORAGE_APP_ID || process.env.HERMES_APP_ID || '';
+    if (envAppId.startsWith('hsk_') || process.env.HERMES_STORAGE_APP_ID) {
       appId = envAppId;
     }
   }
