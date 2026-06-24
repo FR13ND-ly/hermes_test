@@ -93,37 +93,89 @@ function maskRedisUrl(url: string | null): string | null {
   return url ? url.replace(/(redis:\/\/[^:]*:)[^@]*(@)/, '$1***$2') : null;
 }
 
-let cachedAppId: string | null = null;
-async function getAppId(): Promise<string> {
-  if (cachedAppId) return cachedAppId;
+interface BaaSConfig {
+  appId: string;
+  secret: string | null;
+  apiKey: string | null;
+}
 
-  // 1. Hermes publică id-ul serviciului BaaS ca HERMES_AUTH_APP_ID (sursa oficială).
-  if (process.env.HERMES_AUTH_APP_ID) {
-    cachedAppId = process.env.HERMES_AUTH_APP_ID;
-    console.log(`ℹ️ [Auth Proxy] Folosim App ID din HERMES_AUTH_APP_ID: ${cachedAppId}`);
-    return cachedAppId;
-  }
+let resolvedBaaSConfig: BaaSConfig | null = null;
 
-  // 2. Compat vechi: HERMES_APP_ID, dacă nu e un credential de bucket (hsk_).
-  if (process.env.HERMES_APP_ID && !process.env.HERMES_APP_ID.startsWith('hsk_')) {
-    cachedAppId = process.env.HERMES_APP_ID;
-    console.log(`ℹ️ [Auth Proxy] Folosim App ID din HERMES_APP_ID: ${cachedAppId}`);
-    return cachedAppId;
-  }
+async function getBaaSConfig(): Promise<BaaSConfig> {
+  if (resolvedBaaSConfig) return resolvedBaaSConfig;
 
-  // 3. Fallback pentru dezvoltare locala: interogam baza de date centrala
+  // Start with default env vars
+  let appId = process.env.HERMES_AUTH_APP_ID || (process.env.HERMES_APP_ID && !process.env.HERMES_APP_ID.startsWith('hsk_') ? process.env.HERMES_APP_ID : '');
+  let secret = process.env.HERMES_AUTH_SECRET || null;
+  let apiKey = process.env.HERMES_APP_TOKEN || null;
+
   try {
-    const result = await mainDbPool.query("SELECT id FROM apps WHERE name = $1 OR name = $2 LIMIT 1", ['backend', 'hermes_test']);
-    if (result.rows.length > 0) {
-      cachedAppId = result.rows[0].id;
-      console.log(`ℹ️ [Auth Proxy] Am obtinut App ID din baza de date: ${cachedAppId}`);
-      return cachedAppId!;
+    const appRes = await mainDbPool.query(
+      "SELECT project_id, id FROM apps WHERE name = $1 OR name = $2 LIMIT 1",
+      ['backend', 'hermes_test']
+    );
+    if (appRes.rows.length > 0) {
+      const projectId = appRes.rows[0].project_id;
+      const appUuid = appRes.rows[0].id;
+      if (!appId) {
+        appId = appUuid;
+      }
+
+      const baasRes = await mainDbPool.query(
+        "SELECT id FROM baas_services WHERE project_id = $1 LIMIT 1",
+        [projectId]
+      );
+      if (baasRes.rows.length > 0) {
+        const baasId = baasRes.rows[0].id;
+
+        const appIdKeyRes = await mainDbPool.query(
+          "SELECT key FROM project_env_variables WHERE source_id = $1 AND source = 'baas_auth' AND is_secret = false LIMIT 1",
+          [baasId]
+        );
+        if (appIdKeyRes.rows.length > 0) {
+          const key = appIdKeyRes.rows[0].key;
+          if (process.env[key]) {
+            appId = process.env[key]!;
+          }
+        } else {
+          appId = baasId;
+        }
+
+        const secretKeyRes = await mainDbPool.query(
+          "SELECT key FROM project_env_variables WHERE source_id = $1 AND source = 'baas_auth' AND is_secret = true LIMIT 1",
+          [baasId]
+        );
+        if (secretKeyRes.rows.length > 0) {
+          const key = secretKeyRes.rows[0].key;
+          if (process.env[key]) {
+            secret = process.env[key]!;
+          }
+        }
+
+        const apiKeyKeyRes = await mainDbPool.query(
+          "SELECT p.key FROM project_env_variables p JOIN app_api_keys a ON a.id = p.source_id WHERE a.baas_id = $1 AND p.source = 'baas' AND p.is_secret = true LIMIT 1",
+          [baasId]
+        );
+        if (apiKeyKeyRes.rows.length > 0) {
+          const key = apiKeyKeyRes.rows[0].key;
+          if (process.env[key]) {
+            apiKey = process.env[key]!;
+          }
+        }
+      }
     }
-  } catch (dbErr: any) {
-    console.warn(`⚠️ [Auth Proxy] Nu s-a putut interoga baza de date centrala pentru App ID:`, dbErr.message);
+  } catch (err: any) {
+    console.warn(`⚠️ [BaaS Config] Nu s-a putut interoga baza de date centrala pentru configurarea BaaS:`, err.message);
   }
 
-  throw new Error("Application 'backend' or 'hermes_test' ID could not be resolved (no env vars and DB query failed).");
+  resolvedBaaSConfig = { appId, secret, apiKey };
+  console.log(`ℹ️ [BaaS Config] Resolved: appId=${appId}, secret=${secret ? '***' : 'null'}, apiKey=${apiKey ? '***' : 'null'}`);
+  return resolvedBaaSConfig;
+}
+
+async function getAppId(): Promise<string> {
+  const config = await getBaaSConfig();
+  return config.appId;
 }
 
 app.use(cors());
@@ -196,7 +248,7 @@ runInitWithRetry();
 
 // MIDDLEWARE PENTRU BAAS AUTH (Validează tokenul JWT sau x-user-id ca fallback)
 const requirePermission = (requiredRole: string) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
     let userId: string | null = null;
     let roles: string[] = [];
 
@@ -204,7 +256,8 @@ const requirePermission = (requiredRole: string) => {
     const authHeader = req.headers['authorization'];
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
-      const secret = process.env.HERMES_AUTH_SECRET;
+      const config = await getBaaSConfig();
+      const secret = config.secret;
       if (secret) {
         try {
           const decoded: any = jwt.verify(token, secret);
@@ -215,7 +268,7 @@ const requirePermission = (requiredRole: string) => {
           return res.status(401).json({ error: 'Token invalid sau expirat.' });
         }
       } else {
-        console.warn('⚠️ [BaaS Auth] HERMES_AUTH_SECRET nu este definit. Se trece la fallback pe headere.');
+        console.warn('⚠️ [BaaS Auth] HERMES_AUTH_SECRET/custom secret nu este definit. Se trece la fallback pe headere.');
       }
     }
 
@@ -240,10 +293,11 @@ const requirePermission = (requiredRole: string) => {
 // ==========================================
 // RUTE CONFIGURARE
 // ==========================================
-app.get('/api/config', (req: Request, res: Response) => {
+app.get('/api/config', async (req: Request, res: Response) => {
+  const config = await getBaaSConfig();
   res.json({
     hermesBaaSUrl: process.env.HERMES_BAAS_URL || 'https://api.hermes-os.ro/api/v1/apps/APP_ID_AICI',
-    appApiKey: process.env.HERMES_APP_TOKEN || 'hm_tff.secret32charsAici',
+    appApiKey: config.apiKey || 'hm_tff.secret32charsAici',
     serverlessUrl: process.env.SERVERLESS_REPORT_URL || '',
     volumePath: VOLUME_MOUNT_PATH
   });
@@ -570,6 +624,7 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
   try {
     const { identifier, password } = req.body;
     const appId = await getAppId();
+    const config = await getBaaSConfig();
     const platformOrigin = getPlatformOrigin();
     const targetUrl = `${platformOrigin}/api/v1/baas/${appId}/auth/register`;
 
@@ -578,7 +633,8 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
       password
     }, {
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiKey || ''}`
       }
     });
 
@@ -594,6 +650,7 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
     const { identifier, password } = req.body;
     const appId = await getAppId();
+    const config = await getBaaSConfig();
     const platformOrigin = getPlatformOrigin();
     const targetUrl = `${platformOrigin}/api/v1/baas/${appId}/auth/login`;
 
@@ -602,7 +659,8 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
       password
     }, {
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.apiKey || ''}`
       }
     });
 
