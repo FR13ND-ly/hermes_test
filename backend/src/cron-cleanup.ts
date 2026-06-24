@@ -6,7 +6,14 @@ import fs from 'fs';
 dotenv.config();
 
 function getStorageUrl(): string {
-  let storageUrl = process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
+  if (process.env.HERMES_STORAGE_URL) return process.env.HERMES_STORAGE_URL;
+  if (process.env.HERMES_STORAGE_API_URL) return process.env.HERMES_STORAGE_API_URL;
+  
+  if (process.env.HERMES_PLATFORM_URL) {
+    return `${process.env.HERMES_PLATFORM_URL}/api/v1/storage`;
+  }
+
+  let storageUrl = 'http://localhost:8000/api/v1/storage';
   if (storageUrl.endsWith('/storage')) {
     storageUrl = storageUrl.replace('/storage', '/api/v1/storage');
   }

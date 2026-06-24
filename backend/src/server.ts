@@ -15,14 +15,18 @@ const PORT = process.env.PORT || 3000;
 const VOLUME_MOUNT_PATH = process.env.VOLUME_MOUNT_PATH || '/data';
 
 function getStorageUrl(): string {
-  // Hermes injects HERMES_STORAGE_URL (the full storage API endpoint) into the env
-  // pool when a bucket is linked — use it as-is. localhost is a dev-only fallback.
-  return process.env.HERMES_STORAGE_URL || process.env.HERMES_STORAGE_API_URL || 'http://localhost:8000/api/v1/storage';
+  if (process.env.HERMES_STORAGE_URL) return process.env.HERMES_STORAGE_URL;
+  if (process.env.HERMES_STORAGE_API_URL) return process.env.HERMES_STORAGE_API_URL;
+  if (process.env.HERMES_PLATFORM_URL) {
+    return `${process.env.HERMES_PLATFORM_URL}/api/v1/storage`;
+  }
+  return 'http://localhost:8000/api/v1/storage';
 }
 
 function getPlatformOrigin(): string {
-  // Prefer the BaaS API URL (always present when BaaS is on) so auth doesn't depend
-  // on storage being linked; fall back to the storage URL, then localhost (dev).
+  if (process.env.HERMES_PLATFORM_URL) {
+    return process.env.HERMES_PLATFORM_URL;
+  }
   const url = process.env.HERMES_BAAS_URL || process.env.HERMES_AUTH_API_URL || getStorageUrl();
   try {
     return new URL(url).origin;
@@ -295,8 +299,12 @@ const requirePermission = (requiredRole: string) => {
 // ==========================================
 app.get('/api/config', async (req: Request, res: Response) => {
   const config = await getBaaSConfig();
+  const hermesBaaSUrl = process.env.HERMES_BAAS_URL || 
+    (process.env.HERMES_PLATFORM_URL 
+      ? `${process.env.HERMES_PLATFORM_URL}/api/v1/apps/${config.appId}` 
+      : `https://api.hermes-os.ro/api/v1/apps/${config.appId || 'APP_ID_AICI'}`);
   res.json({
-    hermesBaaSUrl: process.env.HERMES_BAAS_URL || 'https://api.hermes-os.ro/api/v1/apps/APP_ID_AICI',
+    hermesBaaSUrl,
     appApiKey: config.apiKey || 'hm_tff.secret32charsAici',
     serverlessUrl: process.env.SERVERLESS_REPORT_URL || '',
     volumePath: VOLUME_MOUNT_PATH
