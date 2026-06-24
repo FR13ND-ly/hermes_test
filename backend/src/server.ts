@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
+import { createClient, RedisClientType } from 'redis';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
@@ -55,26 +56,56 @@ function getMainDatabaseUrl(): string {
 
 const mainDbPool = new Pool({ connectionString: getMainDatabaseUrl() });
 
+// ==========================================
+// REDIS (bază de date Redis legată la proiect)
+// ==========================================
+// Hermes publică connection string-ul unui Redis legat ca `redis://:parolă@host:6379`
+// în env pool — sub DATABASE_URL sau <NUME>_DATABASE_URL, în funcție de cum e numit.
+// Scanăm valorile din env după prima care arată a Redis, ca să-l găsim indiferent de
+// numele cheii (sau REDIS_URL explicit, pentru dev local).
+function getRedisUrl(): string | null {
+  if (process.env.REDIS_URL) return process.env.REDIS_URL;
+  for (const value of Object.values(process.env)) {
+    if (typeof value === 'string' && value.startsWith('redis://')) return value;
+  }
+  return null;
+}
+
+let redisClient: RedisClientType | null = null;
+async function getRedis(): Promise<RedisClientType> {
+  const url = getRedisUrl();
+  if (!url) {
+    throw new Error('Niciun Redis legat: nu am găsit un env redis:// (leagă o bază Redis la proiect).');
+  }
+  if (!redisClient) {
+    redisClient = createClient({ url });
+    redisClient.on('error', (e) => console.error('⚠️ [Redis] Eroare conexiune:', (e as Error).message));
+  }
+  if (!redisClient.isOpen) await redisClient.connect();
+  return redisClient;
+}
+
+// Maschează parola din connection string pentru afișare în UI.
+function maskRedisUrl(url: string | null): string | null {
+  return url ? url.replace(/(redis:\/\/[^:]*:)[^@]*(@)/, '$1***$2') : null;
+}
+
 let cachedAppId: string | null = null;
 async function getAppId(): Promise<string> {
   if (cachedAppId) return cachedAppId;
 
-  // 1. Verificam daca ID-ul este setat direct ca variabila de mediu si nu este un credential de bucket (hsk_)
+  // 1. Hermes publică id-ul serviciului BaaS ca HERMES_AUTH_APP_ID (sursa oficială).
+  if (process.env.HERMES_AUTH_APP_ID) {
+    cachedAppId = process.env.HERMES_AUTH_APP_ID;
+    console.log(`ℹ️ [Auth Proxy] Folosim App ID din HERMES_AUTH_APP_ID: ${cachedAppId}`);
+    return cachedAppId;
+  }
+
+  // 2. Compat vechi: HERMES_APP_ID, dacă nu e un credential de bucket (hsk_).
   if (process.env.HERMES_APP_ID && !process.env.HERMES_APP_ID.startsWith('hsk_')) {
     cachedAppId = process.env.HERMES_APP_ID;
     console.log(`ℹ️ [Auth Proxy] Folosim App ID din HERMES_APP_ID: ${cachedAppId}`);
     return cachedAppId;
-  }
-
-  // 2. Incercam sa extragem ID-ul din HERMES_BAAS_URL
-  const baasUrl = process.env.HERMES_BAAS_URL;
-  if (baasUrl) {
-    const match = baasUrl.match(/\/apps\/([a-f0-9-]{36})/i);
-    if (match && match[1]) {
-      cachedAppId = match[1];
-      console.log(`ℹ️ [Auth Proxy] Am extras App ID din HERMES_BAAS_URL: ${cachedAppId}`);
-      return cachedAppId;
-    }
   }
 
   // 3. Fallback pentru dezvoltare locala: interogam baza de date centrala
@@ -265,6 +296,65 @@ app.delete('/api/items/:id', async (req: Request, res: Response) => {
     res.json(result.rows[0]);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// RUTE REDIS (cheie-valoare, prefix test:)
+// ==========================================
+// Stare conexiune + ce URL folosim (cu parola mascată).
+app.get('/api/redis/status', async (req: Request, res: Response) => {
+  try {
+    const client = await getRedis();
+    const pong = await client.ping();
+    res.json({ connected: true, ping: pong, url: maskRedisUrl(getRedisUrl()) });
+  } catch (error: any) {
+    res.status(503).json({ connected: false, error: error.message, url: maskRedisUrl(getRedisUrl()) });
+  }
+});
+
+// Listează cheile de test (cu valoare + TTL rămas).
+app.get('/api/redis/keys', async (req: Request, res: Response) => {
+  try {
+    const client = await getRedis();
+    const keys = await client.keys('test:*');
+    const out = [];
+    for (const k of keys) {
+      out.push({ key: k.replace(/^test:/, ''), value: await client.get(k), ttl: await client.ttl(k) });
+    }
+    out.sort((a, b) => a.key.localeCompare(b.key));
+    res.json(out);
+  } catch (error: any) {
+    res.status(503).json({ error: error.message });
+  }
+});
+
+// Scrie o cheie (TTL opțional, în secunde).
+app.post('/api/redis/keys', async (req: Request, res: Response) => {
+  try {
+    const { key, value, ttl } = req.body;
+    if (!key) return res.status(400).json({ error: 'Cheia este obligatorie.' });
+    const client = await getRedis();
+    const seconds = Number(ttl);
+    if (Number.isFinite(seconds) && seconds > 0) {
+      await client.set(`test:${key}`, String(value ?? ''), { EX: seconds });
+    } else {
+      await client.set(`test:${key}`, String(value ?? ''));
+    }
+    res.status(201).json({ success: true, key, value: String(value ?? ''), ttl: seconds > 0 ? seconds : null });
+  } catch (error: any) {
+    res.status(503).json({ error: error.message });
+  }
+});
+
+// Șterge o cheie de test.
+app.delete('/api/redis/keys/:key', async (req: Request, res: Response) => {
+  try {
+    const client = await getRedis();
+    const deleted = await client.del(`test:${req.params.key}`);
+    res.json({ success: true, deleted });
+  } catch (error: any) {
+    res.status(503).json({ error: error.message });
   }
 });
 
@@ -478,7 +568,7 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
     const { identifier, password } = req.body;
     const appId = await getAppId();
     const platformOrigin = getPlatformOrigin();
-    const targetUrl = `${platformOrigin}/api/v1/apps/${appId}/auth/register`;
+    const targetUrl = `${platformOrigin}/api/v1/baas/${appId}/auth/register`;
 
     const response = await axios.post(targetUrl, {
       identifier,
@@ -502,7 +592,7 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
     const { identifier, password } = req.body;
     const appId = await getAppId();
     const platformOrigin = getPlatformOrigin();
-    const targetUrl = `${platformOrigin}/api/v1/apps/${appId}/auth/login`;
+    const targetUrl = `${platformOrigin}/api/v1/baas/${appId}/auth/login`;
 
     const response = await axios.post(targetUrl, {
       identifier,
@@ -599,9 +689,15 @@ app.post('/api/cron/cleanup', async (req: Request, res: Response) => {
     console.log('🧹 [Cron Webhook] Se șterg fișierele mai vechi de 30 de zile...');
     const oldFiles = await pool.query("SELECT id, storage_object_id FROM user_files WHERE created_at < NOW() - INTERVAL '30 days'");
 
+    const storageUrl = getStorageUrl();
+    const { appId: storageAppId, secretKey: storageSecretKey } = getBucketCredentials();
     for (const file of oldFiles.rows) {
-      await axios.delete(`${process.env.HERMES_STORAGE_API_URL}/objects/${file.storage_object_id}`, {
-        headers: { 'X-Hermes-API-Key': process.env.HERMES_API_KEY }
+      await axios.delete(`${storageUrl}/objects/${file.storage_object_id}`, {
+        headers: {
+          'x-hermes-app-id': storageAppId,
+          'x-hermes-secret-key': storageSecretKey,
+          'Authorization': `Bearer ${storageSecretKey}`
+        }
       });
       await pool.query('DELETE FROM user_files WHERE id = $1', [file.id]);
     }

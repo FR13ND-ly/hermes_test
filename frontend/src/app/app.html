@@ -164,6 +164,84 @@
       </div>
     </section>
 
+    <!-- REDIS SECTION -->
+    <section class="bg-neutral-900 border border-neutral-900 rounded-xl p-6 shadow-xl space-y-6">
+      <div class="flex items-center justify-between border-b border-neutral-850 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">⚡</span>
+          <h3 class="text-md font-semibold text-neutral-200">Testare Redis: Cheie-Valoare (prefix test:)</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                [ngClass]="redisStatus()?.connected ? 'text-emerald-300 border-emerald-900/50 bg-emerald-950/30' : 'text-red-300 border-red-900/50 bg-red-950/30'">
+            {{ redisStatus()?.connected ? '● Conectat' : '○ Deconectat' }}
+          </span>
+          <button (click)="refreshRedis()" class="bg-neutral-950 hover:bg-neutral-900 border border-neutral-800 rounded p-1 text-xs">
+            🔄 Reîncarcă
+          </button>
+        </div>
+      </div>
+
+      @if (redisStatus() && !redisStatus().connected) {
+        <div class="bg-red-950/20 border border-red-900/40 rounded-lg p-3 text-[10px] text-red-300">
+          Redis indisponibil: {{ redisStatus().error }}
+          <span class="block text-neutral-500 mt-1">Leagă o bază de date Redis la proiect (env-ul cu <code>redis://</code> e detectat automat).</span>
+        </div>
+      } @else if (redisStatus()?.url) {
+        <p class="text-[10px] text-neutral-500 font-mono">URL: {{ redisStatus().url }}</p>
+      }
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Formular SET -->
+        <div class="bg-neutral-950 p-4 rounded-xl border border-neutral-850 space-y-3">
+          <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider">➕ Scrie o cheie</h4>
+          <div>
+            <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Cheie</label>
+            <input type="text" [(ngModel)]="redisKeyInput" placeholder="Ex: salut"
+                   class="w-full bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">Valoare</label>
+            <input type="text" [(ngModel)]="redisValueInput" placeholder="Ex: lume"
+                   class="w-full bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-neutral-400 uppercase tracking-wider mb-1">TTL (secunde, opțional)</label>
+            <input type="number" [(ngModel)]="redisTtlInput" placeholder="Ex: 60 (gol = fără expirare)"
+                   class="w-full bg-neutral-900 border border-neutral-800 rounded px-2.5 py-1.5 text-xs text-neutral-100 focus:outline-none focus:border-indigo-500">
+          </div>
+          <button (click)="setRedisKey()"
+                  class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-1.5 rounded text-xs font-semibold transition-colors">
+            SET în Redis
+          </button>
+        </div>
+
+        <!-- Listă chei -->
+        <div class="md:col-span-2 space-y-2">
+          <h4 class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Chei existente în Redis (test:*):</h4>
+          <div class="bg-neutral-950 border border-neutral-850 rounded-xl divide-y divide-neutral-900 max-h-60 overflow-y-auto">
+            @for (entry of redisKeys(); track entry.key) {
+              <div class="p-3 text-xs flex items-center justify-between hover:bg-neutral-900/30 transition-colors">
+                <div class="space-y-0.5 pr-4 min-w-0">
+                  <h5 class="font-bold text-neutral-200 truncate">{{ entry.key }}</h5>
+                  <p class="text-neutral-400 font-mono text-[10px] truncate">{{ entry.value }}</p>
+                  <span class="text-[9px] text-neutral-500 block">TTL: {{ entry.ttl < 0 ? 'fără expirare' : entry.ttl + 's' }}</span>
+                </div>
+                <button (click)="deleteRedisKey(entry.key)"
+                        class="bg-red-950/20 hover:bg-red-950/50 text-red-300 py-1 px-2 rounded border border-red-900/40 transition-colors shrink-0">
+                  Șterge
+                </button>
+              </div>
+            } @empty {
+              <div class="p-8 text-center text-xs text-neutral-600 italic">
+                Nicio cheie test:* în Redis. Scrie una folosind formularul din stânga!
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- BAAS AUTHENTICATION SECTION -->
     <section class="bg-neutral-900 border border-neutral-900 rounded-xl p-6 shadow-xl space-y-4">
       <div class="flex items-center gap-2 border-b border-neutral-850 pb-3">

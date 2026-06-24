@@ -42,6 +42,13 @@ export class App implements OnInit {
   // Cron logs signals
   cronExecutions = signal<any[]>([]);
 
+  // Redis signals (cheie-valoare)
+  redisStatus = signal<any>(null);
+  redisKeys = signal<any[]>([]);
+  redisKeyInput = signal('');
+  redisValueInput = signal('');
+  redisTtlInput = signal<number | null>(null);
+
   // Configuration management signals
   showConfig = signal(false);
   baasUrlInput = signal('');
@@ -111,6 +118,7 @@ export class App implements OnInit {
       this.loadFiles();
       this.refreshVolumeFiles();
       this.refreshCronStatus();
+      this.refreshRedis();
       if (this.driveService.serverlessUrl()) {
         this.serverlessUrl.set(this.driveService.serverlessUrl());
       }
@@ -213,6 +221,48 @@ export class App implements OnInit {
         error: (e) => this.notify('Eroare la ștergerea elementului: ' + this.errMsg(e), 'error')
       });
     }
+  }
+
+  // ==========================================
+  // REDIS (cheie-valoare)
+  // ==========================================
+  refreshRedis() {
+    this.driveService.getRedisStatus().subscribe({
+      next: (s) => this.redisStatus.set(s),
+      error: (e) => this.redisStatus.set({ connected: false, error: this.errMsg(e) })
+    });
+    this.driveService.getRedisKeys().subscribe({
+      next: (data) => this.redisKeys.set(data),
+      error: () => this.redisKeys.set([])
+    });
+  }
+
+  setRedisKey() {
+    if (!this.redisKeyInput().trim()) {
+      this.notify('Introdu o cheie Redis.', 'error');
+      return;
+    }
+    const ttl = this.redisTtlInput();
+    this.driveService.setRedisKey(this.redisKeyInput(), this.redisValueInput(), ttl ?? undefined).subscribe({
+      next: () => {
+        this.redisKeyInput.set('');
+        this.redisValueInput.set('');
+        this.redisTtlInput.set(null);
+        this.refreshRedis();
+        this.notify('Cheie scrisă în Redis.', 'success');
+      },
+      error: (e) => this.notify('Eroare la scrierea în Redis: ' + this.errMsg(e), 'error')
+    });
+  }
+
+  deleteRedisKey(key: string) {
+    this.driveService.deleteRedisKey(key).subscribe({
+      next: () => {
+        this.refreshRedis();
+        this.notify('Cheie ștearsă din Redis.', 'success');
+      },
+      error: (e) => this.notify('Eroare la ștergerea cheii: ' + this.errMsg(e), 'error')
+    });
   }
 
   // ==========================================

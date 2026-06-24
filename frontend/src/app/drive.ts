@@ -130,4 +130,21 @@ export class DriveService {
   getCronStatus(): Observable<any[]> {
     return this.http.get<any[]>(`${this.nodeBackendUrl()}/cron/status`);
   }
+
+  // Redis Module (cheie-valoare)
+  getRedisStatus(): Observable<any> {
+    return this.http.get(`${this.nodeBackendUrl()}/redis/status`);
+  }
+
+  getRedisKeys(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.nodeBackendUrl()}/redis/keys`);
+  }
+
+  setRedisKey(key: string, value: string, ttl?: number): Observable<any> {
+    return this.http.post(`${this.nodeBackendUrl()}/redis/keys`, { key, value, ttl });
+  }
+
+  deleteRedisKey(key: string): Observable<any> {
+    return this.http.delete(`${this.nodeBackendUrl()}/redis/keys/${encodeURIComponent(key)}`);
+  }
 }
