@@ -1,8 +1,9 @@
-import { Component, inject, signal, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DriveService } from '../drive';
 import { ToastService } from '../services/toast';
+import { SessionService } from '../services/session';
 
 @Component({
   selector: 'app-baas-auth',
@@ -19,11 +20,11 @@ import { ToastService } from '../services/toast';
         <!-- Session Management Box -->
         <div class="bg-neutral-950 p-5 border border-neutral-900 space-y-5 shadow-md rounded-none">
           <h4 class="text-[10px] font-bold text-violet-400 uppercase tracking-widest flex items-center gap-2">
-            <span class="w-1.5 h-1.5 bg-neutral-700" [ngClass]="{'bg-emerald-500': userId}"></span>
-            {{ userId ? 'ACTIVE SESSION' : 'UNAUTHENTICATED VISIT' }}
+            <span class="w-1.5 h-1.5 bg-neutral-700" [ngClass]="{'bg-emerald-500': session.userId()}"></span>
+            {{ session.userId() ? 'ACTIVE SESSION' : 'UNAUTHENTICATED VISIT' }}
           </h4>
 
-          @if (!userId) {
+          @if (!session.userId()) {
             <!-- Login / Register Form -->
             <div class="space-y-4">
               <div>
@@ -55,11 +56,11 @@ import { ToastService } from '../services/toast';
               <div class="bg-neutral-900/10 p-4 border border-neutral-900 rounded-none space-y-3 font-mono text-xs leading-relaxed">
                 <div class="flex justify-between items-center border-b border-neutral-900 pb-2">
                   <span class="text-neutral-500">Identifier:</span>
-                  <span class="font-bold text-neutral-200 select-all">{{ userIdentifier }}</span>
+                  <span class="font-bold text-neutral-200 select-all">{{ session.userIdentifier() }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-neutral-500">Subject UUID:</span>
-                  <span class="font-bold text-violet-400 select-all truncate max-w-[200px]" [title]="userId">{{ userId }}</span>
+                  <span class="font-bold text-violet-400 select-all truncate max-w-[200px]" [title]="session.userId()">{{ session.userId() }}</span>
                 </div>
               </div>
               
@@ -92,12 +93,7 @@ import { ToastService } from '../services/toast';
 export class BaasAuthComponent {
   public driveService = inject(DriveService);
   private toast = inject(ToastService);
-
-  @Input() userId: string | null = null;
-  @Input() userIdentifier: string = '';
-
-  @Output() loginSuccess = new EventEmitter<{ userId: string; identifier: string }>();
-  @Output() logoutTriggered = new EventEmitter<void>();
+  public session = inject(SessionService);
 
   identifier = '';
   password = '';
@@ -120,13 +116,7 @@ export class BaasAuthComponent {
   onLogin() {
     this.driveService.login(this.identifier.trim(), this.password).subscribe({
       next: (res: any) => {
-        this.loginSuccess.emit({ userId: res.appUserId, identifier: res.identifier });
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('hermes_user_id', res.appUserId);
-          localStorage.setItem('hermes_user_identifier', res.identifier);
-          if (res.accessToken) localStorage.setItem('hermes_access_token', res.accessToken);
-          if (res.refreshToken) localStorage.setItem('hermes_refresh_token', res.refreshToken);
-        }
+        this.session.saveSession(res.appUserId, res.identifier, res.accessToken, res.refreshToken);
         this.password = '';
         this.toast.notify('Logged in as ' + res.identifier, 'success');
       },
@@ -135,7 +125,7 @@ export class BaasAuthComponent {
   }
 
   onLogout() {
-    this.logoutTriggered.emit();
+    this.session.clearSession();
     this.toast.notify('Logged out.', 'info');
   }
 

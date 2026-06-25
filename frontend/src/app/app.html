@@ -44,97 +44,97 @@
       <div class="text-[9px] font-bold text-neutral-600 uppercase tracking-widest px-4 mb-2.5">Test Targets</div>
       
       <!-- Database CRUD Tab -->
-      <button (click)="activeTab.set('database')"
-              class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
-              [class]="activeTab() === 'database' ? 'bg-neutral-900 text-neutral-100 border-r-indigo-500 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+      <a routerLink="/database"
+         routerLinkActive="bg-neutral-900 text-neutral-100 border-r-indigo-500 font-semibold"
+         class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30">
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75" />
         </svg>
         <span>PostgreSQL CRUD</span>
-      </button>
+      </a>
 
       <!-- Redis Cache Tab -->
-      <button (click)="activeTab.set('redis')"
-              class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
-              [class]="activeTab() === 'redis' ? 'bg-neutral-900 text-neutral-100 border-r-amber-500 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+      <a routerLink="/redis"
+         routerLinkActive="bg-neutral-900 text-neutral-100 border-r-amber-500 font-semibold"
+         class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30">
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 0 0 2.25-2.25V6.75a2.25 2.25 0 0 0-2.25-2.25H6.75A2.25 2.25 0 0 0 4.5 6.75v10.5a2.25 2.25 0 0 0 2.25 2.25Zm.75-12h7.5v7.5H7.5v-7.5Z" />
         </svg>
         <span>Redis Cache</span>
-      </button>
+      </a>
 
       <!-- BaaS Authentication Tab -->
-      <button (click)="activeTab.set('auth')"
-              class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
-              [class]="activeTab() === 'auth' ? 'bg-neutral-900 text-neutral-100 border-r-violet-500 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+      <a routerLink="/auth"
+         routerLinkActive="bg-neutral-900 text-neutral-100 border-r-violet-500 font-semibold"
+         class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30">
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
         </svg>
         <span>BaaS Auth Gateway</span>
-      </button>
+      </a>
 
       <!-- Storage Tab -->
-      <button (click)="activeTab.set('storage')"
-              class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
-              [class]="activeTab() === 'storage' ? 'bg-neutral-900 text-neutral-100 border-r-emerald-500 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+      <a routerLink="/storage"
+         routerLinkActive="bg-neutral-900 text-neutral-100 border-r-emerald-500 font-semibold"
+         class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30">
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-19.5 0A2.25 2.25 0 0 0 4.5 15h15a2.25 2.25 0 0 0 2.25-2.25m-19.5 0v.225c0 1.18.91 2.164 2.09 2.201a51.964 51.964 0 0 0 15.32 0c1.18-.037 2.09-1.022 2.09-2.201v-.225M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
         </svg>
         <span>Object & PVC Storage</span>
-      </button>
+      </a>
 
       <!-- Serverless Knative Tab -->
-      <button (click)="activeTab.set('serverless')"
-              class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
-              [class]="activeTab() === 'serverless' ? 'bg-neutral-900 text-neutral-100 border-r-sky-500 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+      <a routerLink="/serverless"
+         routerLinkActive="bg-neutral-900 text-neutral-100 border-r-sky-500 font-semibold"
+         class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30">
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
         </svg>
         <span>Knative Serverless</span>
-      </button>
+      </a>
 
       <!-- Task Scheduler (Crons) Tab -->
-      <button (click)="activeTab.set('crons')"
-              class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
-              [class]="activeTab() === 'crons' ? 'bg-neutral-900 text-neutral-100 border-r-pink-500 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+      <a routerLink="/crons"
+         routerLinkActive="bg-neutral-900 text-neutral-100 border-r-pink-500 font-semibold"
+         class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30">
         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
         </svg>
         <span>Cron Execution</span>
-      </button>
+      </a>
 
       <div class="pt-5 border-t border-neutral-900/60 mt-4">
         <div class="text-[9px] font-bold text-neutral-600 uppercase tracking-widest px-4 mb-2.5">Console Config</div>
         
         <!-- Connection Settings Tab -->
-        <button (click)="activeTab.set('settings')"
-                class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
-                [class]="activeTab() === 'settings' ? 'bg-neutral-900 text-neutral-100 border-r-neutral-400 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+        <a routerLink="/settings"
+           routerLinkActive="bg-neutral-900 text-neutral-100 border-r-neutral-400 font-semibold"
+           class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30">
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.43l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.991l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.645-.869l.214-1.28Z" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
           </svg>
           <span>Gateway Config</span>
-        </button>
+        </a>
       </div>
     </nav>
 
     <!-- Sidebar Footer / Session Status (monochrome, sharp) -->
     <div class="p-4 border-t border-neutral-900 bg-neutral-950">
       <div class="p-3 bg-neutral-900/30 border border-neutral-900 rounded-none text-xs space-y-1">
-        <ng-container *ngIf="userId()">
+        <ng-container *ngIf="session.userId()">
           <div class="flex justify-between items-center text-[10px]">
             <span class="text-neutral-500 uppercase font-bold tracking-wider">Identity</span>
             <span class="text-emerald-400 font-bold uppercase tracking-wider text-[9px] border border-emerald-800/30 bg-emerald-950/20 px-1.5 py-0.5">BaaS</span>
           </div>
-          <p class="font-bold text-neutral-300 truncate select-all">{{ userIdentifier() }}</p>
+          <p class="font-bold text-neutral-300 truncate select-all">{{ session.userIdentifier() }}</p>
           <div class="pt-1.5">
             <button (click)="logout()" class="w-full py-1 text-neutral-400 hover:text-rose-400 hover:bg-rose-950/10 border border-neutral-800 hover:border-rose-900/30 rounded-none cursor-pointer transition-colors text-[10px] uppercase font-bold tracking-wider">
               Logout
             </button>
           </div>
         </ng-container>
-        <ng-container *ngIf="!userId()">
+        <ng-container *ngIf="!session.userId()">
           <div class="flex justify-between items-center text-[10px] text-neutral-500">
             <span class="uppercase font-bold tracking-wider">Session</span>
             <span class="uppercase font-bold tracking-wider">Guest</span>
@@ -151,13 +151,7 @@
     <!-- Top Navbar Header -->
     <header class="h-14 border-b border-neutral-900 flex items-center justify-between px-8 bg-neutral-950 shrink-0">
       <h2 class="text-[11px] font-bold tracking-widest uppercase text-neutral-400">
-        {{ activeTab() === 'database' ? 'Target: Postgres DB Instance'
-         : activeTab() === 'redis' ? 'Target: Redis Memory Cache'
-         : activeTab() === 'auth' ? 'Target: BaaS Gateway'
-         : activeTab() === 'storage' ? 'Target: S3 & Volume Mounts'
-         : activeTab() === 'serverless' ? 'Target: Knative Ingress'
-         : activeTab() === 'crons' ? 'Target: Cron Scheduler'
-         : 'System Gateways' }}
+        Active Environment Integration Console
       </h2>
       
       <!-- System Connection Status -->
@@ -170,41 +164,10 @@
     </header>
 
     <!-- Main Panel Container -->
-    <main class="flex-1 p-8 overflow-y-auto min-h-0 space-y-6">
+    <main class="flex-1 p-8 overflow-y-auto min-h-0">
       
-      <!-- Tab sections mapped to standalone components -->
-      @if (activeTab() === 'database') {
-        <app-database-crud></app-database-crud>
-      }
-
-      @if (activeTab() === 'redis') {
-        <app-redis-cache></app-redis-cache>
-      }
-
-      @if (activeTab() === 'auth') {
-        <app-baas-auth 
-          [userId]="userId()" 
-          [userIdentifier]="userIdentifier()" 
-          (loginSuccess)="onLoginSuccess($event)" 
-          (logoutTriggered)="logout()">
-        </app-baas-auth>
-      }
-
-      @if (activeTab() === 'storage') {
-        <app-file-storage></app-file-storage>
-      }
-
-      @if (activeTab() === 'serverless') {
-        <app-serverless></app-serverless>
-      }
-
-      @if (activeTab() === 'crons') {
-        <app-crons></app-crons>
-      }
-
-      @if (activeTab() === 'settings') {
-        <app-settings></app-settings>
-      }
+      <!-- Routed view outlet -->
+      <router-outlet></router-outlet>
 
     </main>
   </div>
