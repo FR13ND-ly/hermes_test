@@ -1,161 +1,175 @@
-<!-- TOAST NOTIFICATIONS (sleek, animated, top-right overlay) -->
+<!-- TOAST NOTIFICATIONS (flat, sharp, high-contrast, top-right overlay) -->
 <div class="fixed top-6 right-6 z-50 flex flex-col gap-3 w-80 max-w-[calc(100vw-3rem)]">
   @for (t of toasts(); track t.id) {
     <div (click)="dismissToast(t.id)"
-         class="group flex items-start gap-3 px-4 py-3.5 rounded-xl border shadow-2xl backdrop-blur-md cursor-pointer transition-all duration-300 transform hover:scale-[1.02] border-white/5"
-         [class]="t.type === 'success' ? 'bg-emerald-950/70 border-emerald-500/30 text-emerald-200'
-                : t.type === 'error'   ? 'bg-red-950/70 border-red-500/30 text-red-200'
-                : 'bg-neutral-900/80 border-neutral-800/80 text-neutral-200'">
-      <span class="flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold shrink-0 mt-0.5"
-            [class]="t.type === 'success' ? 'bg-emerald-500/20 text-emerald-400'
-                   : t.type === 'error'   ? 'bg-red-500/20 text-red-400'
-                   : 'bg-neutral-800 text-neutral-400'">
-        {{ t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ' }}
-      </span>
+         class="group flex items-start gap-3.5 px-4.5 py-3 rounded-none border border-neutral-800 bg-neutral-950 shadow-2xl cursor-pointer transition-all duration-150 border-l-4"
+         [class]="t.type === 'success' ? 'border-l-emerald-500 text-neutral-200'
+                : t.type === 'error'   ? 'border-l-rose-500 text-neutral-200'
+                : 'border-l-indigo-500 text-neutral-200'">
       <div class="flex-1 min-w-0">
-        <p class="text-xs font-medium leading-relaxed break-words">{{ t.message }}</p>
+        <div class="flex items-center gap-1.5 mb-0.5">
+          <span class="text-[9px] font-bold uppercase tracking-widest"
+                [class]="t.type === 'success' ? 'text-emerald-400'
+                       : t.type === 'error'   ? 'text-rose-400'
+                       : 'text-indigo-400'">
+            {{ t.type === 'success' ? 'Success' : t.type === 'error' ? 'Error' : 'Info' }}
+          </span>
+        </div>
+        <p class="text-[11px] font-mono leading-normal text-neutral-400 break-words">{{ t.message }}</p>
       </div>
     </div>
   }
 </div>
 
-<div class="flex min-h-screen bg-neutral-950 text-neutral-100 font-sans">
+<div class="flex min-h-screen bg-neutral-950 text-neutral-100 font-mono antialiased">
   
   <!-- SIDEBAR NAVIGATION -->
-  <aside class="w-72 border-r border-neutral-900/60 bg-neutral-950 flex flex-col shrink-0 select-none">
+  <aside class="w-64 border-r border-neutral-900 bg-neutral-950 flex flex-col shrink-0 select-none">
     
     <!-- Branding Header -->
-    <div class="p-6 border-b border-neutral-900/60">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-          <span class="text-white font-extrabold text-sm tracking-widest">H</span>
+    <div class="p-5 border-b border-neutral-900">
+      <div class="flex items-center gap-2.5">
+        <div class="w-6 h-6 rounded-none bg-indigo-600 flex items-center justify-center">
+          <span class="text-neutral-950 font-bold text-xs">H</span>
         </div>
         <div>
-          <h1 class="text-sm font-bold tracking-wider uppercase text-neutral-200">Hermes Console</h1>
-          <p class="text-[10px] text-neutral-500 font-medium">Integration & Testing Lab</p>
+          <h1 class="text-xs font-bold tracking-widest uppercase text-neutral-200">Hermes Console</h1>
+          <p class="text-[9px] text-neutral-600 uppercase tracking-wider font-semibold">Integrations Lab</p>
         </div>
       </div>
     </div>
 
     <!-- Navigation List -->
-    <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-      <div class="text-[9px] font-bold text-neutral-500 uppercase tracking-widest px-3 mb-2">Services</div>
+    <nav class="flex-1 py-4 space-y-0.5 overflow-y-auto">
+      <div class="text-[9px] font-bold text-neutral-600 uppercase tracking-widest px-4 mb-2.5">Test Targets</div>
       
       <!-- Database CRUD Tab -->
       <button (click)="activeTab.set('database')"
-              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer"
-              [class]="activeTab() === 'database' ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 font-semibold' : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40 border border-transparent'">
-        <span class="text-sm">🗄️</span>
+              class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
+              [class]="activeTab() === 'database' ? 'bg-neutral-900 text-neutral-100 border-r-indigo-500 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75" />
+        </svg>
         <span>PostgreSQL CRUD</span>
       </button>
 
       <!-- Redis Cache Tab -->
       <button (click)="activeTab.set('redis')"
-              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer"
-              [class]="activeTab() === 'redis' ? 'bg-amber-600/10 text-amber-400 border border-amber-500/20 font-semibold' : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40 border border-transparent'">
-        <span class="text-sm">⚡</span>
+              class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
+              [class]="activeTab() === 'redis' ? 'bg-neutral-900 text-neutral-100 border-r-amber-500 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 0 0 2.25-2.25V6.75a2.25 2.25 0 0 0-2.25-2.25H6.75A2.25 2.25 0 0 0 4.5 6.75v10.5a2.25 2.25 0 0 0 2.25 2.25Zm.75-12h7.5v7.5H7.5v-7.5Z" />
+        </svg>
         <span>Redis Cache</span>
       </button>
 
       <!-- BaaS Authentication Tab -->
       <button (click)="activeTab.set('auth')"
-              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer"
-              [class]="activeTab() === 'auth' ? 'bg-violet-600/10 text-violet-400 border border-violet-500/20 font-semibold' : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40 border border-transparent'">
-        <span class="text-sm">🔑</span>
-        <span>BaaS Auth</span>
+              class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
+              [class]="activeTab() === 'auth' ? 'bg-neutral-900 text-neutral-100 border-r-violet-500 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z" />
+        </svg>
+        <span>BaaS Auth Gateway</span>
       </button>
 
-      <!-- Storage Tab (S3 & PVC) -->
+      <!-- Storage Tab -->
       <button (click)="activeTab.set('storage')"
-              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer"
-              [class]="activeTab() === 'storage' ? 'bg-emerald-600/10 text-emerald-400 border border-emerald-500/20 font-semibold' : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40 border border-transparent'">
-        <span class="text-sm">📁</span>
-        <span>File Storage</span>
+              class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
+              [class]="activeTab() === 'storage' ? 'bg-neutral-900 text-neutral-100 border-r-emerald-500 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-19.5 0A2.25 2.25 0 0 0 4.5 15h15a2.25 2.25 0 0 0 2.25-2.25m-19.5 0v.225c0 1.18.91 2.164 2.09 2.201a51.964 51.964 0 0 0 15.32 0c1.18-.037 2.09-1.022 2.09-2.201v-.225M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </svg>
+        <span>Object & PVC Storage</span>
       </button>
 
       <!-- Serverless Knative Tab -->
       <button (click)="activeTab.set('serverless')"
-              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer"
-              [class]="activeTab() === 'serverless' ? 'bg-sky-600/10 text-sky-400 border border-sky-500/20 font-semibold' : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40 border border-transparent'">
-        <span class="text-sm">🚀</span>
-        <span>Serverless Functions</span>
+              class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
+              [class]="activeTab() === 'serverless' ? 'bg-neutral-900 text-neutral-100 border-r-sky-500 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
+        </svg>
+        <span>Knative Serverless</span>
       </button>
 
       <!-- Task Scheduler (Crons) Tab -->
       <button (click)="activeTab.set('crons')"
-              class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer"
-              [class]="activeTab() === 'crons' ? 'bg-pink-600/10 text-pink-400 border border-pink-500/20 font-semibold' : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40 border border-transparent'">
-        <span class="text-sm">⏱️</span>
-        <span>Task Scheduler</span>
+              class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
+              [class]="activeTab() === 'crons' ? 'bg-neutral-900 text-neutral-100 border-r-pink-500 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        </svg>
+        <span>Cron Execution</span>
       </button>
 
-      <div class="pt-6">
-        <div class="text-[9px] font-bold text-neutral-500 uppercase tracking-widest px-3 mb-2">Configuration</div>
+      <div class="pt-5 border-t border-neutral-900/60 mt-4">
+        <div class="text-[9px] font-bold text-neutral-600 uppercase tracking-widest px-4 mb-2.5">Console Config</div>
         
         <!-- Connection Settings Tab -->
         <button (click)="activeTab.set('settings')"
-                class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer"
-                [class]="activeTab() === 'settings' ? 'bg-neutral-800 text-neutral-200 border border-neutral-700 font-semibold' : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/40 border border-transparent'">
-          <span class="text-sm">⚙️</span>
-          <span>Gateway Settings</span>
+                class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-[11px] font-medium transition-colors cursor-pointer border-r-[3px] border-y border-y-transparent"
+                [class]="activeTab() === 'settings' ? 'bg-neutral-900 text-neutral-100 border-r-neutral-400 font-semibold' : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-900/30 border-r-transparent'">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.43l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.991l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.645-.869l.214-1.28Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+          </svg>
+          <span>Gateway Config</span>
         </button>
       </div>
     </nav>
 
-    <!-- Sidebar Footer / User Profile -->
-    <div class="p-4 border-t border-neutral-900/60 bg-neutral-950">
-      <div class="flex items-center gap-3 p-2 rounded-xl bg-neutral-900/45 border border-neutral-850/50">
+    <!-- Sidebar Footer / Session Status (monochrome, sharp) -->
+    <div class="p-4 border-t border-neutral-900 bg-neutral-950">
+      <div class="p-3 bg-neutral-900/30 border border-neutral-900 rounded-none text-xs space-y-1">
         <ng-container *ngIf="userId()">
-          <div class="w-7 h-7 rounded-full bg-emerald-500/10 flex items-center justify-center text-[10px] text-emerald-400 border border-emerald-500/20 font-bold shrink-0">
-            U
+          <div class="flex justify-between items-center text-[10px]">
+            <span class="text-neutral-500 uppercase font-bold tracking-wider">Identity</span>
+            <span class="text-emerald-400 font-bold uppercase tracking-wider text-[9px] border border-emerald-800/30 bg-emerald-950/20 px-1.5 py-0.5">BaaS</span>
           </div>
-          <div class="min-w-0 flex-1">
-            <p class="text-[11px] font-semibold text-neutral-200 truncate leading-tight">{{ userIdentifier() }}</p>
-            <p class="text-[9px] text-emerald-500 font-medium">BaaS Authenticated</p>
+          <p class="font-bold text-neutral-300 truncate select-all">{{ userIdentifier() }}</p>
+          <div class="pt-1.5">
+            <button (click)="logout()" class="w-full py-1 text-neutral-400 hover:text-rose-400 hover:bg-rose-950/10 border border-neutral-800 hover:border-rose-900/30 rounded-none cursor-pointer transition-colors text-[10px] uppercase font-bold tracking-wider">
+              Logout
+            </button>
           </div>
-          <button (click)="logout()" class="text-neutral-500 hover:text-red-400 p-1 transition-colors rounded hover:bg-neutral-800 cursor-pointer" title="Log out">
-            ✕
-          </button>
         </ng-container>
         <ng-container *ngIf="!userId()">
-          <div class="w-7 h-7 rounded-full bg-neutral-800 flex items-center justify-center text-[10px] text-neutral-400 border border-neutral-700/50 font-bold shrink-0">
-            ?
+          <div class="flex justify-between items-center text-[10px] text-neutral-500">
+            <span class="uppercase font-bold tracking-wider">Session</span>
+            <span class="uppercase font-bold tracking-wider">Guest</span>
           </div>
-          <div class="min-w-0 flex-1">
-            <p class="text-[11px] font-semibold text-neutral-400 truncate leading-tight">Visitor Mode</p>
-            <p class="text-[9px] text-neutral-600">Unauthenticated</p>
-          </div>
+          <p class="text-neutral-600 italic text-[11px] mt-0.5">Read-only connection</p>
         </ng-container>
       </div>
     </div>
   </aside>
 
   <!-- MAIN CONTENT AREA -->
-  <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-gradient-to-b from-neutral-950 via-neutral-950 to-neutral-900">
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-neutral-950">
     
     <!-- Top Navbar Header -->
-    <header class="h-16 border-b border-neutral-900/60 flex items-center justify-between px-8 bg-neutral-950/60 backdrop-blur-md z-10 shrink-0">
-      <div class="flex items-center gap-2">
-        <h2 class="text-sm font-semibold tracking-tight text-neutral-300 uppercase">
-          {{ activeTab() === 'database' ? 'PostgreSQL Database Integration'
-           : activeTab() === 'redis' ? 'Redis Key-Value Cache'
-           : activeTab() === 'auth' ? 'BaaS Authentication Service'
-           : activeTab() === 'storage' ? 'File Storage & S3 Buckets'
-           : activeTab() === 'serverless' ? 'Serverless Functions'
-           : activeTab() === 'crons' ? 'Scheduled Tasks'
-           : 'System Settings & Gateways' }}
-        </h2>
-      </div>
-      <div class="flex items-center gap-4">
-        <!-- Live Connection Status -->
-        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 text-[10px] font-medium text-neutral-400">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span>Orchestrator: Connected</span>
+    <header class="h-14 border-b border-neutral-900 flex items-center justify-between px-8 bg-neutral-950 shrink-0">
+      <h2 class="text-[11px] font-bold tracking-widest uppercase text-neutral-400">
+        {{ activeTab() === 'database' ? 'Target: Postgres DB Instance'
+         : activeTab() === 'redis' ? 'Target: Redis Memory Cache'
+         : activeTab() === 'auth' ? 'Target: BaaS Gateway'
+         : activeTab() === 'storage' ? 'Target: S3 & Volume Mounts'
+         : activeTab() === 'serverless' ? 'Target: Knative Ingress'
+         : activeTab() === 'crons' ? 'Target: Cron Scheduler'
+         : 'System Gateways' }}
+      </h2>
+      
+      <!-- System Connection Status -->
+      <div class="flex items-center gap-4 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+        <div class="flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-none bg-emerald-500"></span>
+          <span>In-Cluster Sync</span>
         </div>
       </div>
     </header>
 
-    <!-- View Switcher -->
+    <!-- Main Panel Container -->
     <main class="flex-1 p-8 overflow-y-auto min-h-0 space-y-6">
       
       <!-- ========================================== -->
@@ -163,47 +177,48 @@
       <!-- ========================================== -->
       @if (activeTab() === 'database') {
         <div class="space-y-6 max-w-5xl">
-          <div class="bg-neutral-900/30 border border-neutral-900 rounded-2xl p-6 shadow-xl space-y-6">
-            <div class="flex items-center justify-between border-b border-neutral-850 pb-4">
+          <div class="border border-neutral-900 bg-neutral-950 p-6 space-y-6 rounded-none">
+            
+            <div class="flex items-center justify-between border-b border-neutral-900 pb-4">
               <div>
-                <h3 class="text-sm font-bold text-neutral-200">Table: test_items</h3>
-                <p class="text-[11px] text-neutral-500 mt-0.5">Validate read/write queries to the default database instance.</p>
+                <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-200">Table schema: test_items</h3>
+                <p class="text-[10px] text-neutral-500 mt-1 font-mono">Verify read, write, and delete transactions against Postgres.</p>
               </div>
-              <button (click)="loadItems()" class="bg-neutral-900 hover:bg-neutral-850 text-neutral-300 text-xs font-semibold py-1.5 px-3 rounded-lg border border-neutral-800 hover:border-neutral-700 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm">
-                🔄 Reload
+              <button (click)="loadItems()" class="bg-neutral-900 hover:bg-neutral-850 text-neutral-300 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3.5 border border-neutral-800 hover:border-neutral-700 rounded-none transition-colors cursor-pointer shadow-sm">
+                Reload Data
               </button>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               
               <!-- Form -->
-              <div class="bg-neutral-950/70 p-5 rounded-2xl border border-neutral-850/80 space-y-4 shadow-lg">
-                <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-                  {{ editingItemId() ? '✍️ Edit Entry' : '➕ Create Entry' }}
+              <div class="bg-neutral-950 p-5 border border-neutral-900 space-y-4 shadow-md rounded-none">
+                <h4 class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">
+                  {{ editingItemId() ? 'Update Entry' : 'New Entry' }}
                 </h4>
-                <div class="space-y-3">
+                <div class="space-y-3.5">
                   <div>
-                    <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Title</label>
-                    <input type="text" [(ngModel)]="itemTitle" placeholder="E.g. Database connection"
-                           class="w-full bg-neutral-950/80 border border-neutral-850 rounded-xl px-3.5 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25 transition-all">
+                    <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Item Title</label>
+                    <input type="text" [(ngModel)]="itemTitle" placeholder="Task or item name"
+                           class="w-full bg-neutral-950 border border-neutral-900 rounded-none px-3 py-2 text-xs font-mono text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-indigo-600 transition-colors">
                   </div>
                   <div>
-                    <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Description</label>
-                    <textarea [(ngModel)]="itemDesc" rows="4" placeholder="E.g. Tested successfully from in-cluster connection..."
-                              class="w-full bg-neutral-950/80 border border-neutral-850 rounded-xl px-3.5 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25 transition-all resize-none"></textarea>
+                    <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Description</label>
+                    <textarea [(ngModel)]="itemDesc" rows="5" placeholder="Operational details or JSON string"
+                              class="w-full bg-neutral-950 border border-neutral-900 rounded-none px-3 py-2 text-xs font-mono text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-indigo-600 transition-colors resize-none"></textarea>
                   </div>
                 </div>
-                <div class="flex gap-2 pt-2">
+                <div class="flex gap-2 pt-1.5">
                   <button *ngIf="!editingItemId()" (click)="addItem()"
-                          class="flex-1 bg-indigo-600 hover:bg-indigo-500 hover:scale-[1.02] active:scale-[0.98] text-white py-2 rounded-xl text-xs font-semibold transition-all duration-250 cursor-pointer shadow-md shadow-indigo-500/10">
-                    Insert Record
+                          class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-neutral-950 py-2 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md shadow-indigo-600/5">
+                    Insert
                   </button>
                   <button *ngIf="editingItemId()" (click)="saveEdit()"
-                          class="flex-1 bg-indigo-600 hover:bg-indigo-500 hover:scale-[1.02] active:scale-[0.98] text-white py-2 rounded-xl text-xs font-semibold transition-all duration-250 cursor-pointer shadow-md shadow-indigo-500/10">
-                    Save Changes
+                          class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-neutral-950 py-2 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md shadow-indigo-600/5">
+                    Save
                   </button>
                   <button *ngIf="editingItemId()" (click)="cancelEdit()"
-                          class="bg-neutral-800 hover:bg-neutral-750 text-neutral-400 py-2 px-4 rounded-xl text-xs font-semibold transition-all duration-250 cursor-pointer">
+                          class="bg-neutral-900 hover:bg-neutral-800 text-neutral-400 py-2 px-4 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer border border-neutral-800">
                     Cancel
                   </button>
                 </div>
@@ -211,34 +226,33 @@
 
               <!-- Records List -->
               <div class="lg:col-span-2 space-y-3">
-                <h4 class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-1">PostgreSQL Records</h4>
-                <div class="bg-neutral-950/60 border border-neutral-850/80 rounded-2xl overflow-hidden shadow-lg divide-y divide-neutral-900/60 max-h-[380px] overflow-y-auto">
+                <h4 class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider px-1">Active Rowsets</h4>
+                <div class="bg-neutral-950 border border-neutral-900 rounded-none overflow-hidden shadow-md divide-y divide-neutral-900 max-h-[360px] overflow-y-auto">
                   @for (item of items(); track item.id) {
-                    <div class="p-4 flex items-center justify-between hover:bg-neutral-900/25 transition-colors gap-4">
-                      <div class="space-y-1 min-w-0 flex-1">
+                    <div class="p-4 flex items-start justify-between hover:bg-neutral-900/10 transition-colors gap-4">
+                      <div class="space-y-1.5 min-w-0 flex-1">
                         <div class="flex items-center gap-2">
-                          <h5 class="font-semibold text-xs text-neutral-200 truncate">{{ item.title }}</h5>
-                          <span class="text-[9px] px-1.5 py-0.5 rounded bg-neutral-900 border border-neutral-850 font-mono text-neutral-500 shrink-0">{{ item.id.substring(0, 8) }}</span>
+                          <h5 class="font-bold text-xs text-neutral-200 truncate select-all">{{ item.title }}</h5>
+                          <span class="text-[9px] font-mono text-neutral-600 bg-neutral-900 border border-neutral-850 px-1 py-0.5 shrink-0">{{ item.id.substring(0, 8) }}</span>
                         </div>
-                        <p class="text-neutral-400 text-xs font-mono text-[10px] break-all leading-normal">{{ item.description || '(no description)' }}</p>
-                        <span class="text-[9px] text-neutral-600 block">Created at: {{ item.created_at | date:'yyyy-MM-dd HH:mm:ss' }}</span>
+                        <p class="text-neutral-400 text-xs font-mono text-[10px] break-all leading-normal whitespace-pre-wrap">{{ item.description || '(NULL)' }}</p>
+                        <span class="text-[9px] text-neutral-600 block font-mono">timestamp: {{ item.created_at | date:'yyyy-MM-dd HH:mm:ss' }}</span>
                       </div>
                       <div class="flex gap-2 shrink-0">
                         <button (click)="startEdit(item)"
-                                class="bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-[10px] font-semibold py-1.5 px-3 rounded-lg border border-neutral-850 hover:border-neutral-700 transition-colors cursor-pointer">
+                                class="bg-neutral-900 hover:bg-neutral-850 text-neutral-300 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-none border border-neutral-800 hover:border-neutral-700 transition-colors cursor-pointer">
                           Edit
                         </button>
                         <button (click)="deleteItem(item.id)"
-                                class="bg-red-950/20 hover:bg-red-950/40 text-red-400 text-[10px] font-semibold py-1.5 px-3 rounded-lg border border-red-950/50 hover:border-red-900/40 transition-colors cursor-pointer">
+                                class="bg-neutral-950 hover:bg-red-950/20 text-red-500 hover:text-red-400 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-none border border-neutral-900 hover:border-red-900/30 transition-colors cursor-pointer">
                           Delete
                         </button>
                       </div>
                     </div>
                   } @empty {
-                    <div class="p-12 text-center">
-                      <span class="text-2xl block mb-2 opacity-35">🗃️</span>
-                      <p class="text-xs text-neutral-500 italic">No records in the test_items table.</p>
-                      <p class="text-[10px] text-neutral-600 mt-1">Create one using the form on the left to start testing.</p>
+                    <div class="p-16 text-center">
+                      <p class="text-xs text-neutral-500 font-mono italic">TABLE EMPTY (0 rows returned)</p>
+                      <p class="text-[10px] text-neutral-600 font-mono mt-1">Insert a test row to verify transactions.</p>
                     </div>
                   }
                 </div>
@@ -254,96 +268,92 @@
       <!-- ========================================== -->
       @if (activeTab() === 'redis') {
         <div class="space-y-6 max-w-5xl">
-          <div class="bg-neutral-900/30 border border-neutral-900 rounded-2xl p-6 shadow-xl space-y-6">
-            <div class="flex items-center justify-between border-b border-neutral-850 pb-4">
+          <div class="border border-neutral-900 bg-neutral-950 p-6 space-y-6 rounded-none">
+            
+            <div class="flex items-center justify-between border-b border-neutral-900 pb-4">
               <div>
-                <h3 class="text-sm font-bold text-neutral-200">Key-Value Store</h3>
-                <p class="text-[11px] text-neutral-500 mt-0.5">Validate operations against the Redis memory database.</p>
+                <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-200">Cache schema: Redis KV</h3>
+                <p class="text-[10px] text-neutral-500 mt-1 font-mono">Validate real-time caching operations inside the in-memory database.</p>
               </div>
               <div class="flex items-center gap-3">
-                <span class="text-[10px] font-bold px-3 py-1 rounded-full border flex items-center gap-1.5 shrink-0"
-                      [ngClass]="redisStatus()?.connected ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/10' : 'text-red-400 border-red-500/20 bg-red-500/10'">
-                  <span class="w-1.5 h-1.5 rounded-full" [ngClass]="redisStatus()?.connected ? 'bg-emerald-400' : 'bg-red-400'"></span>
-                  {{ redisStatus()?.connected ? 'Online' : 'Offline' }}
+                <span class="text-[10px] font-mono px-2.5 py-1 border flex items-center gap-1.5 shrink-0 rounded-none font-bold"
+                      [ngClass]="redisStatus()?.connected ? 'text-emerald-400 border-emerald-900/40 bg-emerald-950/15' : 'text-rose-400 border-rose-900/40 bg-rose-950/15'">
+                  {{ redisStatus()?.connected ? 'STATUS: ONLINE' : 'STATUS: OFFLINE' }}
                 </span>
-                <button (click)="refreshRedis()" class="bg-neutral-900 hover:bg-neutral-850 text-neutral-300 text-xs font-semibold py-1.5 px-3 rounded-lg border border-neutral-800 hover:border-neutral-700 transition-all cursor-pointer">
-                  🔄 Reload
+                <button (click)="refreshRedis()" class="bg-neutral-900 hover:bg-neutral-850 text-neutral-300 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3.5 border border-neutral-800 hover:border-neutral-700 rounded-none transition-colors cursor-pointer">
+                  Reload
                 </button>
               </div>
             </div>
 
             @if (redisStatus() && !redisStatus().connected) {
-              <div class="bg-red-950/20 border border-red-500/20 rounded-xl p-4 flex gap-3 items-start">
-                <span class="text-red-400 font-bold shrink-0 text-sm">⚠️</span>
-                <div class="text-[11px] text-red-200">
-                  <p class="font-bold">Redis is currently unavailable</p>
-                  <p class="text-neutral-400 mt-0.5 leading-relaxed">{{ redisStatus().error }}</p>
-                  <p class="text-neutral-500 mt-1.5">Verify that you have linked a Redis database to this application in the Hermes control panel. The system injects the connection automatically.</p>
-                </div>
+              <div class="border border-rose-900/30 bg-rose-950/10 p-4 font-mono text-[10px] text-rose-300 leading-relaxed rounded-none">
+                <p class="font-bold uppercase tracking-wider mb-1">Error: Cache Connection Failure</p>
+                <p>{{ redisStatus().error }}</p>
+                <p class="text-neutral-500 mt-2">Ensure your project deployment has a linked Redis instance. The cluster environment variables will populate automatically on reload.</p>
               </div>
             } @else if (redisStatus()?.url) {
-              <div class="bg-neutral-950/50 border border-neutral-850 p-3 rounded-xl flex items-center justify-between font-mono text-[10px] text-neutral-400">
-                <span>Active Connection URL:</span>
-                <span class="text-amber-500 select-all">{{ redisStatus().url }}</span>
+              <div class="bg-neutral-950 border border-neutral-900 p-3 flex items-center justify-between font-mono text-[10px] text-neutral-500 rounded-none">
+                <span>DOCKER-REDIS-ENDPOINT:</span>
+                <span class="text-amber-500 select-all font-semibold">{{ redisStatus().url }}</span>
               </div>
             }
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               
               <!-- Form -->
-              <div class="bg-neutral-950/70 p-5 rounded-2xl border border-neutral-850/80 space-y-4 shadow-lg">
-                <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider">➕ Write Key</h4>
-                <div class="space-y-3">
+              <div class="bg-neutral-950 p-5 border border-neutral-900 space-y-4 shadow-md rounded-none">
+                <h4 class="text-[10px] font-bold text-amber-500 uppercase tracking-widest">SET Key-Value</h4>
+                <div class="space-y-3.5">
                   <div>
-                    <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Key Suffix</label>
-                    <div class="flex items-center">
-                      <span class="bg-neutral-900 border border-r-0 border-neutral-850 text-neutral-500 text-xs rounded-l-xl px-3 py-2 select-none">test:</span>
+                    <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Prefix Suffix</label>
+                    <div class="flex">
+                      <span class="bg-neutral-900 border border-r-0 border-neutral-900 text-neutral-500 text-xs px-3.5 py-2 font-mono select-none rounded-none flex items-center">test:</span>
                       <input type="text" [(ngModel)]="redisKeyInput" placeholder="cache_key"
-                             class="flex-1 bg-neutral-950/80 border border-neutral-850 rounded-r-xl px-3 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/25 transition-all">
+                             class="flex-1 bg-neutral-950 border border-neutral-900 rounded-none px-3 py-2 text-xs font-mono text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-amber-500 transition-colors">
                     </div>
                   </div>
                   <div>
-                    <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Value</label>
-                    <input type="text" [(ngModel)]="redisValueInput" placeholder="Store any text or stringified JSON"
-                           class="w-full bg-neutral-950/80 border border-neutral-850 rounded-xl px-3.5 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/25 transition-all">
+                    <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">String Value</label>
+                    <input type="text" [(ngModel)]="redisValueInput" placeholder="Cached data payload"
+                           class="w-full bg-neutral-950 border border-neutral-900 rounded-none px-3 py-2 text-xs font-mono text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-amber-500 transition-colors">
                   </div>
                   <div>
-                    <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Expiry TTL (seconds)</label>
-                    <input type="number" [(ngModel)]="redisTtlInput" placeholder="Leave empty for permanent keys"
-                           class="w-full bg-neutral-950/80 border border-neutral-850 rounded-xl px-3.5 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/25 transition-all">
+                    <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">TTL Seconds (Optional)</label>
+                    <input type="number" [(ngModel)]="redisTtlInput" placeholder="No expiry (NULL)"
+                           class="w-full bg-neutral-950 border border-neutral-900 rounded-none px-3 py-2 text-xs font-mono text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-amber-500 transition-colors">
                   </div>
                 </div>
                 <button (click)="setRedisKey()"
-                        class="w-full bg-amber-600 hover:bg-amber-500 hover:scale-[1.02] active:scale-[0.98] text-neutral-950 py-2 rounded-xl text-xs font-bold transition-all duration-250 cursor-pointer shadow-md shadow-amber-500/10">
-                  Write to Cache
+                        class="w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 py-2 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md shadow-amber-500/5">
+                  EXECUTE SET
                 </button>
               </div>
 
               <!-- Keys List -->
               <div class="lg:col-span-2 space-y-3">
-                <h4 class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-1">Keys in Redis (test:*)</h4>
-                <div class="bg-neutral-950/60 border border-neutral-850/80 rounded-2xl overflow-hidden shadow-lg divide-y divide-neutral-900/60 max-h-[380px] overflow-y-auto">
+                <h4 class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider px-1">Active Memory Keys (test:*)</h4>
+                <div class="bg-neutral-950 border border-neutral-900 rounded-none overflow-hidden shadow-md divide-y divide-neutral-900 max-h-[360px] overflow-y-auto">
                   @for (entry of redisKeys(); track entry.key) {
-                    <div class="p-4 flex items-center justify-between hover:bg-neutral-900/25 transition-colors gap-4">
-                      <div class="space-y-1 min-w-0 flex-1">
+                    <div class="p-4 flex items-start justify-between hover:bg-neutral-900/10 transition-colors gap-4">
+                      <div class="space-y-1.5 min-w-0 flex-1">
                         <div class="flex items-center gap-2">
                           <h5 class="font-bold text-xs text-neutral-200 truncate select-all">{{ entry.key }}</h5>
-                          <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 font-mono text-amber-400 shrink-0">
-                            {{ entry.ttl < 0 ? 'no-expiry' : 'ttl: ' + entry.ttl + 's' }}
+                          <span class="text-[9px] font-mono text-amber-500 bg-amber-500/5 border border-amber-500/20 px-1.5 py-0.5 shrink-0">
+                            {{ entry.ttl < 0 ? 'PERSIST' : 'TTL: ' + entry.ttl + 's' }}
                           </span>
                         </div>
-                        <p class="text-neutral-400 text-xs font-mono text-[10px] break-all leading-normal bg-neutral-950/40 p-2 border border-neutral-900 rounded-lg overflow-x-auto">{{ entry.value }}</p>
+                        <p class="text-neutral-400 text-xs font-mono text-[10px] break-all leading-normal bg-neutral-900/20 p-2.5 border border-neutral-900 rounded-none overflow-x-auto">{{ entry.value }}</p>
                       </div>
                       <button (click)="deleteRedisKey(entry.key)"
-                              class="bg-red-950/20 hover:bg-red-950/40 text-red-400 text-[10px] font-semibold py-1.5 px-3 rounded-lg border border-red-950/50 hover:border-red-900/40 transition-colors cursor-pointer shrink-0">
-                        Delete
+                              class="bg-neutral-950 hover:bg-rose-950/20 text-rose-500 hover:text-rose-400 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-none border border-neutral-900 hover:border-rose-900/30 transition-colors cursor-pointer shrink-0">
+                        Del
                       </button>
                     </div>
                   } @empty {
-                    <div class="p-12 text-center">
-                      <span class="text-2xl block mb-2 opacity-35">⚡</span>
-                      <p class="text-xs text-neutral-500 italic">No keys matching the test:* prefix exist.</p>
-                      <p class="text-[10px] text-neutral-600 mt-1">Write a key using the form on the left to see it in cache list.</p>
+                    <div class="p-16 text-center">
+                      <p class="text-xs text-neutral-500 font-mono italic">0 KEYS RETURNED (No match for prefix)</p>
+                      <p class="text-[10px] text-neutral-600 font-mono mt-1">Execute SET above to store cache items.</p>
                     </div>
                   }
                 </div>
@@ -359,90 +369,82 @@
       <!-- ========================================== -->
       @if (activeTab() === 'auth') {
         <div class="space-y-6 max-w-5xl">
-          <div class="bg-neutral-900/30 border border-neutral-900 rounded-2xl p-6 shadow-xl space-y-6">
-            <div class="border-b border-neutral-850 pb-4">
-              <h3 class="text-sm font-bold text-neutral-200">Backend-as-a-Service Identity Gateway</h3>
-              <p class="text-[11px] text-neutral-500 mt-0.5">Test OAuth / Token validation via the central authentication gateway.</p>
+          <div class="border border-neutral-900 bg-neutral-950 p-6 space-y-6 rounded-none">
+            
+            <div class="border-b border-neutral-900 pb-4">
+              <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-200">Gateway: BaaS Authentication</h3>
+              <p class="text-[10px] text-neutral-500 mt-1 font-mono">Test token generation, user hashing, and RBAC authentication over the centralized user pool.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
               
               <!-- Session Management Box -->
-              <div class="bg-neutral-950/70 p-6 rounded-2xl border border-neutral-850/80 space-y-5 shadow-lg">
-                <h4 class="text-xs font-bold text-violet-400 uppercase tracking-wider flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full" [ngClass]="userId() ? 'bg-emerald-400' : 'bg-neutral-700'"></span>
-                  {{ userId() ? 'Authenticated Session' : 'Visitor Portal' }}
+              <div class="bg-neutral-950 p-5 border border-neutral-900 space-y-5 shadow-md rounded-none">
+                <h4 class="text-[10px] font-bold text-violet-400 uppercase tracking-widest flex items-center gap-2">
+                  <span class="w-1.5 h-1.5 bg-neutral-700" [ngClass]="{'bg-emerald-500': userId()}"></span>
+                  {{ userId() ? 'ACTIVE SESSION' : 'UNAUTHENTICATED VISIT' }}
                 </h4>
 
                 @if (!userId()) {
                   <!-- Login / Register Form -->
                   <div class="space-y-4">
                     <div>
-                      <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Identifier</label>
+                      <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Identifier</label>
                       <input type="text" [(ngModel)]="identifier" placeholder="Email, username, or phone"
-                             class="w-full bg-neutral-950/80 border border-neutral-850 rounded-xl px-3.5 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/25 transition-all">
-                      <p class="text-[9px] text-neutral-600 mt-1">This will be tracked inside the app identity pool.</p>
+                             class="w-full bg-neutral-950 border border-neutral-900 rounded-none px-3 py-2 text-xs font-mono text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-violet-600 transition-colors">
+                      <p class="text-[9px] text-neutral-600 mt-1 font-mono">Opaque key used to identify the user record.</p>
                     </div>
                     <div>
-                      <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Password</label>
+                      <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Password</label>
                       <input type="password" [(ngModel)]="password" placeholder="••••••••"
-                             class="w-full bg-neutral-950/80 border border-neutral-850 rounded-xl px-3.5 py-2 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/25 transition-all">
-                      <p class="text-[9px] text-neutral-600 mt-1">Minimum 8 characters.</p>
+                             class="w-full bg-neutral-950 border border-neutral-900 rounded-none px-3 py-2 text-xs font-mono text-neutral-100 placeholder-neutral-700 focus:outline-none focus:border-violet-600 transition-colors">
+                      <p class="text-[9px] text-neutral-600 mt-1 font-mono">Minimum 8 characters length.</p>
                     </div>
-                    <div class="flex gap-3 pt-2">
+                    <div class="flex gap-3 pt-1.5">
                       <button (click)="onRegister()"
-                              class="flex-1 bg-neutral-900 hover:bg-neutral-850 hover:scale-[1.02] active:scale-[0.98] text-neutral-300 py-2.5 rounded-xl text-xs font-semibold border border-neutral-800 transition-all cursor-pointer">
-                        Register Account
+                              class="flex-1 bg-neutral-900 hover:bg-neutral-850 text-neutral-300 py-2 rounded-none text-xs font-bold uppercase tracking-wider border border-neutral-800 transition-colors cursor-pointer">
+                        Register
                       </button>
                       <button (click)="onLogin()"
-                              class="flex-1 bg-violet-600 hover:bg-violet-500 hover:scale-[1.02] active:scale-[0.98] text-white py-2.5 rounded-xl text-xs font-semibold transition-all duration-250 cursor-pointer shadow-md shadow-violet-500/10">
-                        Login
+                              class="flex-1 bg-violet-600 hover:bg-violet-500 text-white py-2 rounded-none text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer shadow-md shadow-violet-600/5">
+                        Log In
                       </button>
                     </div>
                   </div>
                 } @else {
                   <!-- Authenticated View -->
                   <div class="space-y-4">
-                    <div class="bg-neutral-900/40 p-4 border border-neutral-850 rounded-xl space-y-3 text-xs leading-relaxed">
-                      <div class="flex justify-between items-center border-b border-neutral-800/60 pb-2">
-                        <span class="text-neutral-500">Handle / Email:</span>
-                        <span class="font-semibold text-neutral-200">{{ userIdentifier() }}</span>
+                    <div class="bg-neutral-900/10 p-4 border border-neutral-900 rounded-none space-y-3 font-mono text-xs leading-relaxed">
+                      <div class="flex justify-between items-center border-b border-neutral-900 pb-2">
+                        <span class="text-neutral-500">Identifier:</span>
+                        <span class="font-bold text-neutral-200 select-all">{{ userIdentifier() }}</span>
                       </div>
                       <div class="flex justify-between items-center">
-                        <span class="text-neutral-500">Platform ID:</span>
-                        <span class="font-mono text-violet-400 select-all text-[11px] truncate max-w-[200px]" [title]="userId()">{{ userId() }}</span>
+                        <span class="text-neutral-500">Subject UUID:</span>
+                        <span class="font-bold text-violet-400 select-all truncate max-w-[200px]" [title]="userId()">{{ userId() }}</span>
                       </div>
                     </div>
                     
                     <button (click)="logout()"
-                            class="w-full bg-red-950/20 hover:bg-red-950/40 hover:scale-[1.02] active:scale-[0.98] text-red-400 py-2.5 rounded-xl text-xs font-semibold border border-red-950/50 hover:border-red-900/40 transition-all cursor-pointer">
-                      Log Out Session
+                            class="w-full bg-neutral-950 hover:bg-rose-950/20 text-rose-500 hover:text-rose-400 py-2.5 rounded-none text-xs font-bold uppercase tracking-wider border border-neutral-900 hover:border-rose-900/30 transition-colors cursor-pointer">
+                      Invalidate Token
                     </button>
                   </div>
                 }
               </div>
 
               <!-- Information Area -->
-              <div class="text-xs text-neutral-400 space-y-5 leading-relaxed bg-neutral-900/20 border border-neutral-900 p-6 rounded-2xl">
-                <h4 class="font-bold text-neutral-200 uppercase tracking-wider text-[10px] text-neutral-300">Identity Integration Workflow</h4>
-                <div class="space-y-3 text-neutral-400">
-                  <div class="flex gap-3">
-                    <span class="text-violet-500 font-bold shrink-0">1.</span>
-                    <p><strong>Register:</strong> The test client pushes credentials to the platform BaaS auth pool. The password is encrypted and hashed securely before storage.</p>
-                  </div>
-                  <div class="flex gap-3">
-                    <span class="text-violet-500 font-bold shrink-0">2.</span>
-                    <p><strong>Authentication:</strong> On login, the platform verifies credentials and returns a secure JWT bearer token payload containing scopes and roles.</p>
-                  </div>
-                  <div class="flex gap-3">
-                    <span class="text-violet-500 font-bold shrink-0">3.</span>
-                    <p><strong>Dashboard sync:</strong> The user list can be monitored and managed inside the <strong>Auth Management</strong> tab in the main project settings.</p>
-                  </div>
+              <div class="font-mono text-xs text-neutral-400 space-y-4 bg-neutral-900/10 border border-neutral-900 p-5 rounded-none">
+                <h4 class="font-bold text-neutral-300 uppercase tracking-widest text-[9px]">Authentication Specification</h4>
+                <div class="space-y-3 leading-normal">
+                  <p><strong>1. Registration Flow:</strong> User credentials are pushed via the public BaaS auth endpoints and persistent hashing algorithms. The database user pool is updated in real-time.</p>
+                  <p><strong>2. Token Validation:</strong> On login verification, the server generates a cryptographically signed JWT bearer token containing security scopes.</p>
+                  <p><strong>3. Dashboard Sync:</strong> Created users can be inspected directly in the central identity console of the Hermes administration dashboard.</p>
                 </div>
 
-                <div class="bg-neutral-950/60 p-3.5 border border-neutral-850 rounded-xl space-y-1.5">
+                <div class="bg-neutral-950 border border-neutral-900 p-3 space-y-1 rounded-none">
                   <p class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider">Gateway Endpoint</p>
-                  <p class="font-mono text-[10px] text-violet-400 truncate select-all leading-tight">{{ driveService.hermesBaaSUrl() }}</p>
+                  <p class="font-mono text-[10px] text-violet-400 truncate select-all">{{ driveService.hermesBaaSUrl() }}</p>
                 </div>
               </div>
 
@@ -452,47 +454,45 @@
       }
 
       <!-- ========================================== -->
-      <!-- TAB: FILE STORAGE (S3 & PVC) -->
+      <!-- TAB: FILE STORAGE -->
       <!-- ========================================== -->
       @if (activeTab() === 'storage') {
         <div class="space-y-6 max-w-5xl">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             
             <!-- S3 Upload box -->
-            <section class="bg-neutral-900/30 border border-neutral-900 rounded-2xl p-6 shadow-xl space-y-5">
-              <div class="border-b border-neutral-850 pb-3 flex items-center gap-2">
-                <span class="text-xl">📁</span>
+            <section class="border border-neutral-900 bg-neutral-950 p-6 space-y-5 rounded-none">
+              <div class="border-b border-neutral-900 pb-3 flex items-center gap-2">
+                <svg class="w-4 h-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-19.5 0A2.25 2.25 0 0 0 4.5 15h15a2.25 2.25 0 0 0 2.25-2.25m-19.5 0v.225c0 1.18.91 2.164 2.09 2.201a51.964 51.964 0 0 0 15.32 0c1.18-.037 2.09-1.022 2.09-2.201v-.225M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                </svg>
                 <div>
-                  <h3 class="text-sm font-bold text-neutral-200">S3 Object Storage</h3>
-                  <p class="text-[10px] text-neutral-500 mt-0.5">Push files to the secure S3-compatible platform storage bucket.</p>
+                  <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-200">S3 Object Bucket</h3>
+                  <p class="text-[10px] text-neutral-500 mt-1 font-mono">Stream binary files to the S3-compatible platform storage system.</p>
                 </div>
               </div>
 
-              <!-- Upload Drag / Select -->
-              <div class="group relative border border-dashed border-neutral-800 hover:border-indigo-500/50 rounded-2xl p-5 text-center cursor-pointer transition-all bg-neutral-950/20 hover:bg-neutral-950/50">
+              <!-- Upload selector -->
+              <div class="group relative border border-dashed border-neutral-800 hover:border-neutral-700 bg-neutral-900/10 p-5 text-center cursor-pointer transition-colors rounded-none">
                 <input type="file" (change)="onUpload($event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                <div class="space-y-1.5">
-                  <span class="text-xl block group-hover:scale-110 transition-transform">📤</span>
-                  <p class="text-xs font-semibold text-neutral-300 group-hover:text-indigo-400 transition-colors">Choose S3 File</p>
-                  <p class="text-[9px] text-neutral-500">Upload metadata and binary chunks via Hermes Storage API</p>
+                <div class="space-y-1">
+                  <p class="text-xs font-bold text-neutral-300 uppercase tracking-wider">Select S3 Payload</p>
+                  <p class="text-[9px] text-neutral-600 font-mono">Upload objects through the centralized Hermes Gateway</p>
                 </div>
               </div>
 
               <!-- Active Uploads progress -->
               @if (activeUploads().length > 0) {
-                <div class="space-y-2">
-                  <h4 class="text-[9px] font-bold text-amber-500 uppercase tracking-wider px-1">Uploading...</h4>
-                  <div class="bg-neutral-950/50 border border-amber-500/20 rounded-xl divide-y divide-neutral-900 overflow-hidden shadow-inner">
+                <div class="space-y-2 font-mono">
+                  <h4 class="text-[9px] font-bold text-amber-500 uppercase tracking-wider px-1">Active Pipeline</h4>
+                  <div class="bg-neutral-950 border border-neutral-900 divide-y divide-neutral-900 rounded-none shadow-inner overflow-hidden">
                     @for (upload of activeUploads(); track upload.id) {
                       <div class="flex items-center justify-between p-3 text-xs">
                         <div class="flex flex-col min-w-0 pr-4">
                           <span class="truncate font-semibold text-neutral-300 max-w-[160px]">{{ upload.fileName }}</span>
-                          <span class="text-[9px] text-amber-400 font-medium flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                            {{ upload.status }}
-                          </span>
+                          <span class="text-[9px] text-amber-500 font-bold uppercase tracking-wider mt-0.5">{{ upload.status }}</span>
                         </div>
-                        <button (click)="cancelUpload(upload.id)" class="bg-neutral-900 hover:bg-neutral-800 text-red-400 text-[10px] font-semibold py-1.5 px-3 rounded-lg border border-neutral-850 hover:border-neutral-700 transition-colors cursor-pointer shrink-0">
+                        <button (click)="cancelUpload(upload.id)" class="bg-neutral-900 hover:bg-neutral-800 text-red-500 hover:text-red-400 text-[9px] font-bold uppercase tracking-wider py-1 px-3 border border-neutral-800 transition-colors cursor-pointer shrink-0">
                           Cancel
                         </button>
                       </div>
@@ -502,75 +502,76 @@
               }
 
               <!-- Files list -->
-              <div class="space-y-2">
-                <h4 class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider px-1">S3 Files in Database</h4>
-                <div class="bg-neutral-950/60 border border-neutral-850/80 rounded-xl divide-y divide-neutral-900/60 max-h-48 overflow-y-auto shadow-lg">
+              <div class="space-y-2 font-mono">
+                <h4 class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider px-1">S3 Metadata Index</h4>
+                <div class="bg-neutral-950 border border-neutral-900 rounded-none divide-y divide-neutral-900 max-h-48 overflow-y-auto shadow-sm">
                   @for (file of files(); track file.id) {
-                    <div class="flex items-center justify-between p-3 hover:bg-neutral-900/20 transition-colors gap-4">
+                    <div class="flex items-center justify-between p-3 hover:bg-neutral-900/10 transition-colors gap-4">
                       <div class="min-w-0 flex-1">
-                        <span class="truncate font-semibold text-xs text-neutral-200 block" [title]="file.file_name">{{ file.file_name }}</span>
-                        <span class="text-[9px] text-neutral-500 font-mono select-all block mt-0.5">{{ file.id.substring(0, 8) }}</span>
+                        <span class="truncate font-bold text-xs text-neutral-300 block" [title]="file.file_name">{{ file.file_name }}</span>
+                        <span class="text-[9px] text-neutral-600 block mt-0.5 select-all">{{ file.id }}</span>
                       </div>
-                      <div class="flex items-center gap-1.5 shrink-0">
-                        <button (click)="downloadFile(file.id)" class="bg-neutral-900 hover:bg-neutral-850 text-neutral-300 text-[10px] font-semibold py-1.5 px-2.5 rounded-lg border border-neutral-850 hover:border-neutral-700 transition-colors cursor-pointer">
+                      <div class="flex items-center gap-2 shrink-0">
+                        <button (click)="downloadFile(file.id)" class="bg-neutral-900 hover:bg-neutral-850 text-neutral-300 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 border border-neutral-800 hover:border-neutral-700 transition-colors cursor-pointer">
                           Get
                         </button>
-                        <button (click)="deleteS3File(file.id)" class="bg-red-950/20 hover:bg-red-950/40 text-red-400 text-[10px] font-semibold py-1.5 px-2.5 rounded-lg border border-red-950/50 hover:border-red-900/40 transition-colors cursor-pointer">
+                        <button (click)="deleteS3File(file.id)" class="bg-neutral-950 hover:bg-rose-950/20 text-rose-500 hover:text-rose-400 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 border border-neutral-900 hover:border-rose-900/30 transition-colors cursor-pointer">
                           Delete
                         </button>
                       </div>
                     </div>
                   } @empty {
-                    <div class="p-8 text-center text-xs text-neutral-600 italic">No files stored in S3.</div>
+                    <div class="p-8 text-center text-xs text-neutral-600 italic">No storage objects returned from S3.</div>
                   }
                 </div>
               </div>
             </section>
 
             <!-- PVC upload box -->
-            <section class="bg-neutral-900/30 border border-neutral-900 rounded-2xl p-6 shadow-xl space-y-5">
-              <div class="border-b border-neutral-850 pb-3 flex items-center justify-between">
+            <section class="border border-neutral-900 bg-neutral-950 p-6 space-y-5 rounded-none">
+              <div class="border-b border-neutral-900 pb-3 flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <span class="text-xl">💾</span>
+                  <svg class="w-4 h-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5 12 11.25 3.75 7.5M20.25 11.25 12 15 3.75 11.25m16.5 3.75-8.25 3.75-8.25-3.75" />
+                  </svg>
                   <div>
-                    <h3 class="text-sm font-bold text-neutral-200">Persistent PVC Volume</h3>
-                    <p class="text-[10px] text-neutral-500 mt-0.5">Write local files to the persistent volume claim (shared space).</p>
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-200">Persistent Volume Claim</h3>
+                    <p class="text-[10px] text-neutral-500 mt-1 font-mono">Write files directly onto the in-cluster persistent volume mountpoint.</p>
                   </div>
                 </div>
-                <button (click)="refreshVolumeFiles()" class="bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 rounded p-1.5 text-xs font-semibold text-neutral-400 hover:text-neutral-200 cursor-pointer">
+                <button (click)="refreshVolumeFiles()" class="bg-neutral-900 hover:bg-neutral-850 border border-neutral-800 rounded p-1.5 text-xs font-bold text-neutral-400 hover:text-neutral-200 cursor-pointer">
                   🔄
                 </button>
               </div>
 
-              <!-- Upload Drag / Select -->
-              <div class="group relative border border-dashed border-neutral-800 hover:border-emerald-500/50 rounded-2xl p-5 text-center cursor-pointer transition-all bg-neutral-950/20 hover:bg-neutral-950/50">
+              <!-- Upload selector -->
+              <div class="group relative border border-dashed border-neutral-800 hover:border-neutral-700 bg-neutral-900/10 p-5 text-center cursor-pointer transition-colors rounded-none">
                 <input type="file" (change)="onVolumeUpload($event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                <div class="space-y-1.5">
-                  <span class="text-xl block group-hover:scale-110 transition-transform">💾</span>
-                  <p class="text-xs font-semibold text-neutral-300 group-hover:text-emerald-400 transition-colors">Choose PVC File</p>
-                  <p class="text-[9px] text-neutral-500">Saves directly to disk at mountpoint path</p>
+                <div class="space-y-1">
+                  <p class="text-xs font-bold text-neutral-300 uppercase tracking-wider">Select PVC Payload</p>
+                  <p class="text-[9px] text-neutral-600 font-mono">Saves local data to the active container file volume</p>
                 </div>
               </div>
 
               <!-- Files list -->
-              <div class="space-y-2">
-                <h4 class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider px-1">Files in Volume Mount</h4>
-                <div class="bg-neutral-950/60 border border-neutral-850/80 rounded-xl divide-y divide-neutral-900/60 max-h-48 overflow-y-auto shadow-lg">
+              <div class="space-y-2 font-mono">
+                <h4 class="text-[9px] font-bold text-neutral-500 uppercase tracking-wider px-1">Files on PVC Mount</h4>
+                <div class="bg-neutral-950 border border-neutral-900 divide-y divide-neutral-900 max-h-48 overflow-y-auto shadow-sm rounded-none">
                   @for (file of volumeFiles(); track file.name) {
-                    <div class="p-3.5 hover:bg-neutral-900/20 transition-colors space-y-2">
+                    <div class="p-3.5 hover:bg-neutral-900/10 transition-colors space-y-2">
                       <div class="flex justify-between items-center gap-4">
-                        <span class="truncate font-semibold text-xs text-neutral-200 block" [title]="file.name">📄 {{ file.name }}</span>
-                        <div class="flex gap-2 items-center shrink-0">
+                        <span class="font-bold text-xs text-neutral-300 block">📄 {{ file.name }}</span>
+                        <div class="flex gap-3 items-center shrink-0">
                           <span class="text-neutral-500 text-[10px] font-mono">{{ file.size }} B</span>
-                          <button (click)="deleteVolumeFile(file.name)" class="text-red-400 hover:text-red-300 text-[9px] font-semibold bg-neutral-900 hover:bg-neutral-850 px-2 py-1 rounded-lg border border-neutral-850 hover:border-neutral-700 cursor-pointer transition-colors">
+                          <button (click)="deleteVolumeFile(file.name)" class="text-red-500 hover:text-red-400 text-[9px] font-bold uppercase tracking-wider bg-neutral-900 hover:bg-neutral-850 px-2 py-1 rounded-none border border-neutral-800 hover:border-neutral-700 cursor-pointer transition-colors">
                             Delete
                           </button>
                         </div>
                       </div>
-                      <pre class="text-[9px] text-neutral-400 bg-neutral-950 border border-neutral-900 px-3 py-2 rounded-lg font-mono overflow-x-auto select-all max-h-16 leading-relaxed shadow-inner">{{ file.content }}</pre>
+                      <pre class="text-[9px] text-neutral-400 bg-neutral-950 border border-neutral-900 px-3 py-2 rounded-none font-mono overflow-x-auto select-all max-h-16 leading-relaxed shadow-inner">{{ file.content }}</pre>
                     </div>
                   } @empty {
-                    <div class="p-8 text-center text-xs text-neutral-600 italic">Persistent Volume is empty.</div>
+                    <div class="p-8 text-center text-xs text-neutral-600 italic">Persistent Volume space is empty.</div>
                   }
                 </div>
               </div>
@@ -585,18 +586,19 @@
       <!-- ========================================== -->
       @if (activeTab() === 'serverless') {
         <div class="space-y-6 max-w-5xl">
-          <div class="bg-neutral-900/30 border border-neutral-900 rounded-2xl p-6 shadow-xl space-y-6">
-            <div class="border-b border-neutral-850 pb-4">
-              <h3 class="text-sm font-bold text-neutral-200">Knative Ephemeral Engine</h3>
-              <p class="text-[11px] text-neutral-500 mt-0.5">Invoke serverless code units directly from inside the cluster gateway.</p>
+          <div class="border border-neutral-900 bg-neutral-950 p-6 space-y-6 rounded-none">
+            
+            <div class="border-b border-neutral-900 pb-4">
+              <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-200">Knative Ingress Gateway</h3>
+              <p class="text-[10px] text-neutral-500 mt-1 font-mono">Simulate runtime invocation of serverless functions within the cluster scope.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <!-- Method -->
               <div class="col-span-1">
-                <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">HTTP Method</label>
+                <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-2 font-mono">Method</label>
                 <select [value]="serverlessMethod()" (change)="serverlessMethod.set($any($event.target).value)"
-                        class="w-full bg-neutral-950 border border-neutral-850 text-neutral-300 text-xs rounded-xl p-2.5 outline-none focus:border-neutral-700 cursor-pointer transition-all">
+                        class="w-full bg-neutral-950 border border-neutral-900 text-neutral-300 text-xs rounded-none p-2.5 outline-none focus:border-neutral-700 cursor-pointer transition-colors font-mono">
                   <option value="GET">GET</option>
                   <option value="POST">POST</option>
                   <option value="PUT">PUT</option>
@@ -605,33 +607,30 @@
               </div>
               <!-- URL -->
               <div class="col-span-3">
-                <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">Function Domain / Cluster Ingress URL</label>
+                <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-2 font-mono">Serverless Function Cluster Domain URL</label>
                 <input type="text" [value]="serverlessUrl()" (input)="serverlessUrl.set($any($event.target).value)"
-                       placeholder="http://serverless-function-slug.namespace.svc.cluster.local"
-                       class="w-full bg-neutral-950 border border-neutral-850 text-neutral-100 text-xs rounded-xl p-2.5 outline-none focus:border-neutral-700 placeholder-neutral-600 transition-all font-mono" />
+                       placeholder="http://serverless-endpoint-slug.namespace.svc.cluster.local"
+                       class="w-full bg-neutral-950 border border-neutral-900 text-neutral-100 text-xs rounded-none p-2.5 outline-none focus:border-neutral-700 placeholder-neutral-800 transition-colors font-mono" />
               </div>
             </div>
 
             <!-- Body -->
             <div *ngIf="serverlessMethod() === 'POST' || serverlessMethod() === 'PUT'" class="space-y-2">
-              <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">JSON Body Payload</label>
+              <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider font-mono">Request Payload (JSON)</label>
               <textarea [value]="serverlessBody()" (input)="serverlessBody.set($any($event.target).value)"
-                        placeholder='{ "action": "test", "params": { "verbose": true } }' rows="4"
-                        class="w-full bg-neutral-950 border border-neutral-850 text-neutral-100 text-xs font-mono rounded-xl p-3 outline-none focus:border-neutral-700 placeholder-neutral-600 transition-all resize-none shadow-inner"></textarea>
+                        placeholder='{ "test": true }' rows="5"
+                        class="w-full bg-neutral-950 border border-neutral-900 text-neutral-100 text-xs font-mono rounded-none p-3 outline-none focus:border-neutral-700 placeholder-neutral-800 transition-colors resize-none shadow-inner"></textarea>
             </div>
 
             <button (click)="runServerless()" 
-                    class="w-full bg-emerald-600 hover:bg-emerald-500 hover:scale-[1.01] active:scale-[0.99] text-white font-bold text-xs py-3 px-4 rounded-xl shadow-lg shadow-emerald-500/10 transition-all duration-250 cursor-pointer flex items-center justify-center gap-2">
-              <span>🚀 Invoke Serverless Code</span>
+                    class="w-full bg-emerald-600 hover:bg-emerald-500 text-neutral-950 font-bold text-xs py-3 px-4 rounded-none shadow-md transition-colors cursor-pointer uppercase tracking-wider">
+              Invoke Function
             </button>
 
             <!-- Pre Console -->
-            <div class="relative space-y-2">
-              <label class="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-1">Response Output Console</label>
-              <div class="absolute right-3.5 top-8.5 text-[9px] uppercase font-extrabold tracking-wider text-neutral-500 bg-neutral-950 px-2 py-0.5 rounded border border-neutral-850 select-none z-10">
-                JSON output
-              </div>
-              <pre class="bg-neutral-950 border border-neutral-850/80 text-emerald-400 font-mono text-[10px] p-5 rounded-xl overflow-x-auto max-h-56 leading-relaxed shadow-inner select-all">{{ serverlessOutput() }}</pre>
+            <div class="relative space-y-2 font-mono">
+              <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider px-1">Response Output Stream</label>
+              <pre class="bg-neutral-950 border border-neutral-900 text-emerald-500 font-mono text-[10px] p-5 rounded-none overflow-x-auto max-h-56 leading-relaxed shadow-inner select-all">{{ serverlessOutput() }}</pre>
             </div>
           </div>
         </div>
@@ -642,42 +641,41 @@
       <!-- ========================================== -->
       @if (activeTab() === 'crons') {
         <div class="space-y-6 max-w-5xl">
-          <div class="bg-neutral-900/30 border border-neutral-900 rounded-2xl p-6 shadow-xl space-y-6">
-            <div class="flex items-center justify-between border-b border-neutral-850 pb-4">
+          <div class="border border-neutral-900 bg-neutral-950 p-6 space-y-6 rounded-none">
+            
+            <div class="flex items-center justify-between border-b border-neutral-900 pb-4">
               <div>
-                <h3 class="text-sm font-bold text-neutral-200">Scheduled Actions Logs</h3>
-                <p class="text-[11px] text-neutral-500 mt-0.5">Monitor trigger events fired by the Hermes cron daemon.</p>
+                <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-200">Execution Logs: Cron Scheduler</h3>
+                <p class="text-[10px] text-neutral-500 mt-1 font-mono">Audit periodic tasks executed automatically by the platform daemon.</p>
               </div>
               <button (click)="refreshCronStatus()" 
-                      class="bg-neutral-900 hover:bg-neutral-850 text-neutral-300 text-xs font-semibold py-1.5 px-3 rounded-lg border border-neutral-800 hover:border-neutral-700 transition-all cursor-pointer">
-                🔄 Reload History
+                      class="bg-neutral-900 hover:bg-neutral-850 text-neutral-300 text-[10px] font-bold uppercase tracking-wider py-1.5 px-3.5 border border-neutral-800 hover:border-neutral-700 rounded-none transition-colors cursor-pointer">
+                Reload History
               </button>
             </div>
 
-            <div class="bg-neutral-950/60 border border-neutral-850/80 rounded-2xl overflow-hidden shadow-lg">
-              <div class="grid grid-cols-3 p-3.5 bg-neutral-900/60 font-bold text-[10px] text-neutral-400 uppercase tracking-wider border-b border-neutral-900/80 select-none">
+            <div class="bg-neutral-950 border border-neutral-900 rounded-none overflow-hidden shadow-md">
+              <div class="grid grid-cols-3 p-3 bg-neutral-900 font-bold text-[9px] text-neutral-400 uppercase tracking-widest border-b border-neutral-900 select-none">
                 <span>Timestamp</span>
-                <span>Purged Records</span>
+                <span>Job Cleanup Scope</span>
                 <span class="text-right">Execution Status</span>
               </div>
-              <div class="divide-y divide-neutral-900 max-h-[360px] overflow-y-auto">
+              <div class="divide-y divide-neutral-900 max-h-[360px] overflow-y-auto font-mono">
                 @for (cron of cronExecutions(); track cron.id) {
-                  <div class="grid grid-cols-3 p-3.5 hover:bg-neutral-900/25 transition-colors text-xs font-mono items-center">
+                  <div class="grid grid-cols-3 p-3.5 hover:bg-neutral-900/10 transition-colors text-xs items-center">
                     <span class="text-neutral-300">{{ cron.run_at | date:'yyyy-MM-dd HH:mm:ss' }}</span>
-                    <span class="text-amber-400 font-semibold flex items-center gap-1.5">
-                      🗑️ {{ cron.purged_count }} files
+                    <span class="text-amber-500 font-semibold">
+                      Purged {{ cron.purged_count }} files
                     </span>
                     <span class="text-right">
-                      <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                        ● Success
+                      <span class="inline-flex text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-none bg-emerald-950/15 border border-emerald-900/40 text-emerald-400 select-none">
+                        Success
                       </span>
                     </span>
                   </div>
                 } @empty {
-                  <div class="p-16 text-center">
-                    <span class="text-2xl block mb-2 opacity-35">⏱️</span>
-                    <p class="text-xs text-neutral-500 italic">No task executions found in db.</p>
-                    <p class="text-[10px] text-neutral-600 mt-1">Crons run periodically based on their configuration in the dashboard.</p>
+                  <div class="p-16 text-center text-xs text-neutral-500 font-mono italic">
+                    0 EXECUTIONS LOGGED IN DATABASE
                   </div>
                 }
               </div>
@@ -691,43 +689,43 @@
       <!-- ========================================== -->
       @if (activeTab() === 'settings') {
         <div class="space-y-6 max-w-4xl">
-          <div class="bg-neutral-900/30 border border-neutral-900 rounded-2xl p-6 shadow-xl space-y-6">
-            <div class="border-b border-neutral-850 pb-4 flex items-center justify-between">
+          <div class="border border-neutral-900 bg-neutral-950 p-6 space-y-6 rounded-none">
+            
+            <div class="border-b border-neutral-900 pb-4 flex items-center justify-between">
               <div>
-                <h3 class="text-sm font-bold text-neutral-200">Server Connections & Gateways</h3>
-                <p class="text-[11px] text-neutral-500 mt-0.5">Point this dashboard to custom API instances running inside the cluster.</p>
+                <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-200">System Gateway Configuration</h3>
+                <p class="text-[10px] text-neutral-500 mt-1 font-mono">Point this client interface to in-cluster routing endpoints.</p>
               </div>
-              <span class="text-[10px] font-mono text-neutral-500 bg-neutral-950 px-2 py-1 rounded border border-neutral-850">Saved in LocalStorage</span>
             </div>
 
-            <div class="space-y-4">
+            <div class="space-y-4 font-mono">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label class="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2">Backend Express API Gateway</label>
+                  <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-2">Backend API Gateway URL</label>
                   <input type="text" [(ngModel)]="backendUrlInput" 
-                         class="w-full bg-neutral-950 border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25 transition-all font-mono">
+                         class="w-full bg-neutral-950 border border-neutral-900 rounded-none px-3 py-2.5 text-xs text-neutral-100 placeholder-neutral-800 focus:outline-none focus:border-indigo-600 transition-colors">
                 </div>
                 <div>
-                  <label class="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2">BaaS Authentication Gateway</label>
+                  <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-2">BaaS Authentication Gate URL</label>
                   <input type="text" [(ngModel)]="baasUrlInput" 
-                         class="w-full bg-neutral-950 border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25 transition-all font-mono">
+                         class="w-full bg-neutral-950 border border-neutral-900 rounded-none px-3 py-2.5 text-xs text-neutral-100 placeholder-neutral-800 focus:outline-none focus:border-indigo-600 transition-colors">
                 </div>
               </div>
               <div>
-                <label class="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-2">X-Hermes-App-Token (Server API Key)</label>
+                <label class="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-2">Server Authorization Token (API Key)</label>
                 <input type="text" [(ngModel)]="apiKeyInput" 
-                       class="w-full bg-neutral-950 border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-indigo-300 font-mono placeholder-neutral-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/25 transition-all">
-                </div>
+                       class="w-full bg-neutral-950 border border-neutral-900 rounded-none px-3 py-2.5 text-xs text-indigo-400 placeholder-neutral-800 focus:outline-none focus:border-indigo-600 transition-colors">
+              </div>
             </div>
 
-            <div class="flex gap-3 pt-4 border-t border-neutral-900">
+            <div class="flex gap-3 pt-4 border-t border-neutral-900 font-mono">
               <button (click)="saveConfig()" 
-                      class="flex-1 bg-indigo-600 hover:bg-indigo-500 hover:scale-[1.01] active:scale-[0.99] text-white font-bold text-xs py-2.5 rounded-xl shadow-lg shadow-indigo-500/10 transition-all cursor-pointer">
-                Save & Update State
+                      class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-neutral-950 font-bold text-xs py-2.5 rounded-none shadow-md transition-colors cursor-pointer uppercase tracking-wider">
+                Apply Settings
               </button>
               <button (click)="resetConfigToDefaults()"
-                      class="bg-neutral-800 hover:bg-neutral-750 text-neutral-400 font-bold text-xs py-2.5 px-6 rounded-xl border border-neutral-850 hover:border-neutral-700 transition-colors cursor-pointer">
-                Restore Factory Defaults
+                      class="bg-neutral-900 hover:bg-neutral-850 text-neutral-400 font-bold text-xs py-2.5 px-6 rounded-none border border-neutral-800 hover:border-neutral-700 transition-colors cursor-pointer uppercase tracking-wider">
+                Reset Client
               </button>
             </div>
           </div>
