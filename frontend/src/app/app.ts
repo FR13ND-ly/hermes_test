@@ -31,7 +31,7 @@ export class App implements OnInit {
   editingItemId = signal<string | null>(null);
 
   // Serverless Knative signals
-  serverlessOutput = signal<string>('Funcția Knative este în starea "idle" (0 replici)...');
+  serverlessOutput = signal<string>('The Knative function is in "idle" state (0 replicas)...');
   serverlessUrl = signal<string>('');
   serverlessMethod = signal<string>('GET');
   serverlessBody = signal<string>('');
@@ -42,7 +42,7 @@ export class App implements OnInit {
   // Cron logs signals
   cronExecutions = signal<any[]>([]);
 
-  // Redis signals (cheie-valoare)
+  // Redis signals (key-value)
   redisStatus = signal<any>(null);
   redisKeys = signal<any[]>([]);
   redisKeyInput = signal('');
@@ -70,7 +70,7 @@ export class App implements OnInit {
 
   /** Pull a readable message out of an HTTP error (Hermes returns { error: { message } }). */
   private errMsg(e: any): string {
-    return e?.error?.error?.message || e?.error?.error || e?.error?.message || e?.message || 'Eroare necunoscută';
+    return e?.error?.error?.message || e?.error?.error || e?.error?.message || e?.message || 'Unknown error';
   }
 
   ngOnInit() {
@@ -139,7 +139,7 @@ export class App implements OnInit {
     // Load new dynamic variables (like storageUrl, storageToken) from the new backend URL
     this.driveService.loadConfig();
 
-    this.notify('Configurație actualizată cu succes!', 'success');
+    this.notify('Configuration updated successfully!', 'success');
     this.showConfig.set(false);
 
     // Refresh active data after a short delay to allow config to load
@@ -166,13 +166,13 @@ export class App implements OnInit {
   loadItems() {
     this.driveService.getItems().subscribe({
       next: (data) => this.items.set(data),
-      error: (e) => console.warn('Eroare încărcare items:', e)
+      error: (e) => console.warn('Error loading items:', e)
     });
   }
 
   addItem() {
     if (!this.itemTitle().trim()) {
-      this.notify('Te rog introdu un titlu.', 'error');
+      this.notify('Please enter a title.', 'error');
       return;
     }
     this.driveService.createItem(this.itemTitle(), this.itemDesc()).subscribe({
@@ -180,9 +180,9 @@ export class App implements OnInit {
         this.itemTitle.set('');
         this.itemDesc.set('');
         this.loadItems();
-        this.notify('Resursă adăugată în baza de date.', 'success');
+        this.notify('Resource added to database.', 'success');
       },
-      error: (e) => this.notify('Eroare la adăugarea itemului: ' + this.errMsg(e), 'error')
+      error: (e) => this.notify('Error adding item: ' + this.errMsg(e), 'error')
     });
   }
 
@@ -199,9 +199,9 @@ export class App implements OnInit {
       next: () => {
         this.cancelEdit();
         this.loadItems();
-        this.notify('Modificările au fost salvate.', 'success');
+        this.notify('Changes saved.', 'success');
       },
-      error: (e) => this.notify('Eroare la salvarea modificărilor: ' + this.errMsg(e), 'error')
+      error: (e) => this.notify('Error saving changes: ' + this.errMsg(e), 'error')
     });
   }
 
@@ -212,19 +212,19 @@ export class App implements OnInit {
   }
 
   deleteItem(id: string) {
-    if (confirm('Sigur vrei să ștergi acest element din baza de date?')) {
+    if (confirm('Are you sure you want to delete this item from the database?')) {
       this.driveService.deleteItem(id).subscribe({
         next: () => {
           this.loadItems();
-          this.notify('Element șters.', 'success');
+          this.notify('Item deleted.', 'success');
         },
-        error: (e) => this.notify('Eroare la ștergerea elementului: ' + this.errMsg(e), 'error')
+        error: (e) => this.notify('Error deleting item: ' + this.errMsg(e), 'error')
       });
     }
   }
 
   // ==========================================
-  // REDIS (cheie-valoare)
+  // REDIS (key-value)
   // ==========================================
   refreshRedis() {
     this.driveService.getRedisStatus().subscribe({
@@ -239,7 +239,7 @@ export class App implements OnInit {
 
   setRedisKey() {
     if (!this.redisKeyInput().trim()) {
-      this.notify('Introdu o cheie Redis.', 'error');
+      this.notify('Enter a Redis key.', 'error');
       return;
     }
     const ttl = this.redisTtlInput();
@@ -249,9 +249,9 @@ export class App implements OnInit {
         this.redisValueInput.set('');
         this.redisTtlInput.set(null);
         this.refreshRedis();
-        this.notify('Cheie scrisă în Redis.', 'success');
+        this.notify('Key written to Redis.', 'success');
       },
-      error: (e) => this.notify('Eroare la scrierea în Redis: ' + this.errMsg(e), 'error')
+      error: (e) => this.notify('Error writing to Redis: ' + this.errMsg(e), 'error')
     });
   }
 
@@ -259,9 +259,9 @@ export class App implements OnInit {
     this.driveService.deleteRedisKey(key).subscribe({
       next: () => {
         this.refreshRedis();
-        this.notify('Cheie ștearsă din Redis.', 'success');
+        this.notify('Key deleted from Redis.', 'success');
       },
-      error: (e) => this.notify('Eroare la ștergerea cheii: ' + this.errMsg(e), 'error')
+      error: (e) => this.notify('Error deleting key: ' + this.errMsg(e), 'error')
     });
   }
 
@@ -270,16 +270,16 @@ export class App implements OnInit {
   // ==========================================
   onRegister() {
     if (!this.identifier().trim()) {
-      this.notify('Introdu un identificator.', 'error');
+      this.notify('Enter an identifier.', 'error');
       return;
     }
     if (this.password().length < 8) {
-      this.notify('Parola trebuie să aibă cel puțin 8 caractere.', 'error');
+      this.notify('Password must be at least 8 characters.', 'error');
       return;
     }
     this.driveService.register(this.identifier().trim(), this.password()).subscribe({
-      next: () => this.notify('Utilizator înregistrat cu succes în BaaS! Acum te poți autentifica.', 'success'),
-      error: (e) => this.notify('Eroare înregistrare: ' + this.errMsg(e), 'error')
+      next: () => this.notify('User registered in BaaS! You can now log in.', 'success'),
+      error: (e) => this.notify('Registration error: ' + this.errMsg(e), 'error')
     });
   }
 
@@ -297,10 +297,10 @@ export class App implements OnInit {
         }
 
         this.password.set('');
-        this.notify('Autentificat ca ' + res.identifier, 'success');
+        this.notify('Logged in as ' + res.identifier, 'success');
         this.loadFiles();
       },
-      error: () => this.notify('Autentificare eșuată. Verifică datele introduse.', 'error')
+      error: () => this.notify('Login failed. Check your credentials.', 'error')
     });
   }
 
@@ -315,13 +315,13 @@ export class App implements OnInit {
       localStorage.removeItem('hermes_access_token');
       localStorage.removeItem('hermes_refresh_token');
     }
-    this.notify('Te-ai deconectat.', 'info');
+    this.notify('Logged out.', 'info');
   }
 
   loadFiles() {
     this.driveService.getFiles().subscribe({
       next: (data) => this.files.set(data),
-      error: (e) => console.warn('Eroare încărcare fișiere S3:', e)
+      error: (e) => console.warn('Error loading S3 files:', e)
     });
   }
 
@@ -336,7 +336,7 @@ export class App implements OnInit {
     const uploadItem = {
       id: uploadId,
       fileName: file.name,
-      status: 'Inițializare...',
+      status: 'Initializing...',
       subscription: null as any
     };
 
@@ -344,23 +344,23 @@ export class App implements OnInit {
 
     const sub = this.driveService.initUploadSession(file.name, file.type, file.size).pipe(
       switchMap((initRes: any) => {
-        uploadItem.status = 'Se încarcă...';
+        uploadItem.status = 'Uploading...';
         return this.driveService.uploadBinaryStream(initRes.upload_url, file);
       }),
       switchMap((uploadRes: any) => {
-        uploadItem.status = 'Salvare metadate...';
+        uploadItem.status = 'Saving metadata...';
         return this.driveService.saveFileMetadata(file.name, uploadRes.id);
       })
     ).subscribe({
       next: () => {
         this.activeUploads.update(uploads => uploads.filter(u => u.id !== uploadId));
-        this.notify('Fișier încărcat în Storage privat S3 și salvat în baza de date!', 'success');
+        this.notify('File uploaded to private S3 Storage and saved to database!', 'success');
         this.loadFiles();
       },
       error: (err) => {
         this.activeUploads.update(uploads => uploads.filter(u => u.id !== uploadId));
         if (err.name !== 'CanceledError' && err.message !== 'canceled' && err.status !== 0) {
-          this.notify('Eroare la încărcare: ' + this.errMsg(err), 'error');
+          this.notify('Upload error: ' + this.errMsg(err), 'error');
         }
       }
     });
@@ -377,13 +377,13 @@ export class App implements OnInit {
   }
 
   deleteS3File(id: string) {
-    if (confirm('Sigur vrei să ștergi acest fișier din stocarea S3 și din baza de date?')) {
+    if (confirm('Are you sure you want to delete this file from S3 storage and the database?')) {
       this.driveService.deleteFile(id).subscribe({
         next: () => {
-          this.notify('Fișierul a fost șters!', 'success');
+          this.notify('File deleted!', 'success');
           this.loadFiles();
         },
-        error: (err) => this.notify('Eroare la ștergerea fișierului: ' + this.errMsg(err), 'error')
+        error: (err) => this.notify('Error deleting file: ' + this.errMsg(err), 'error')
       });
     }
   }
@@ -393,7 +393,7 @@ export class App implements OnInit {
       next: (res: any) => {
         window.open(res.downloadUrl, '_blank');
       },
-      error: (err) => this.notify('Eroare descărcare fișier: ' + this.errMsg(err), 'error')
+      error: (err) => this.notify('File download error: ' + this.errMsg(err), 'error')
     });
   }
 
@@ -406,21 +406,21 @@ export class App implements OnInit {
 
     this.driveService.uploadFileToVolume(file).subscribe({
       next: () => {
-        this.notify('Fișier încărcat direct pe volumul persistent (PVC)!', 'success');
+        this.notify('File uploaded directly to persistent volume (PVC)!', 'success');
         this.refreshVolumeFiles();
       },
-      error: (e) => this.notify('Eroare la scrierea pe volum: ' + this.errMsg(e), 'error')
+      error: (e) => this.notify('Error writing to volume: ' + this.errMsg(e), 'error')
     });
   }
 
   deleteVolumeFile(name: string) {
-    if (confirm(`Sigur vrei să ștergi fișierul "${name}" de pe volum?`)) {
+    if (confirm(`Are you sure you want to delete file "${name}" from the volume?`)) {
       this.driveService.deleteVolumeFile(name).subscribe({
         next: () => {
           this.refreshVolumeFiles();
-          this.notify('Fișier șters de pe volum.', 'success');
+          this.notify('File deleted from volume.', 'success');
         },
-        error: (e) => this.notify('Eroare la ștergerea fișierului de pe volum: ' + this.errMsg(e), 'error')
+        error: (e) => this.notify('Error deleting file from volume: ' + this.errMsg(e), 'error')
       });
     }
   }
@@ -428,7 +428,7 @@ export class App implements OnInit {
   refreshVolumeFiles() {
     this.driveService.getVolumeFiles().subscribe({
       next: (files) => this.volumeFiles.set(files),
-      error: (e) => console.warn('Nu s-au putut prelua fișierele din volum:', e)
+      error: (e) => console.warn('Could not retrieve volume files:', e)
     });
   }
 
@@ -436,18 +436,18 @@ export class App implements OnInit {
   // SERVERLESS & CRON
   // ==========================================
   runServerless() {
-    this.serverlessOutput.set('Invocare HTTP Knative... Serverul pornește la rece pod-ul efemer...');
+    this.serverlessOutput.set('HTTP invocation Knative... Server is cold-starting the ephemeral pod...');
     this.driveService.triggerServerlessTest(
       this.serverlessUrl(),
       this.serverlessMethod(),
       this.serverlessBody()
     ).subscribe({
       next: (data) => {
-        console.log('Răspuns serverless:', data);
+        console.log('Serverless response:', data);
         this.serverlessOutput.set(JSON.stringify(data, null, 2));
       },
       error: (err) => {
-        this.serverlessOutput.set('Eroare invocare serverless: ' + JSON.stringify(err.error || err.message, null, 2));
+        this.serverlessOutput.set('Serverless invocation error: ' + JSON.stringify(err.error || err.message, null, 2));
       }
     });
   }
@@ -455,7 +455,7 @@ export class App implements OnInit {
   refreshCronStatus() {
     this.driveService.getCronStatus().subscribe({
       next: (logs) => this.cronExecutions.set(logs),
-      error: (e) => console.warn('Nu s-a putut citi istoricul cron:', e)
+      error: (e) => console.warn('Could not read cron history:', e)
     });
   }
 }

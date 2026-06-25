@@ -1,43 +1,43 @@
-# Stage 1: Build Angular cu SSR
+# Stage 1: Build Angular with SSR
 FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copiem pachetele pentru instalarea dependințelor
+# Copy package files for dependency installation
 COPY package*.json ./
 
-# Instalăm dependințele curate
+# Install clean dependencies
 RUN npm ci
 
-# Copiem restul fișierelor proiectului (tailwind, angular.json etc.)
+# Copy the rest of the project files (tailwind, angular.json etc.)
 COPY . .
 
-# Build de producție (generează folderele browser + server)
+# Production build (generates browser + server folders)
 RUN npm run build -- --configuration=production
 
 
-# Stage 2: Serverul Node SSR (servește SSR + proxy /api -> backend)
+# Stage 2: Node SSR server (serves SSR + proxy /api -> backend)
 FROM node:22-alpine AS runner
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Permite host-ul venit prin Traefik. '*' = orice host; pune domeniul tău
-# (ex. test.parapet-software.work) dacă vrei mai strict.
+# Allow any host coming through Traefik. '*' = any host; set your domain
+# (e.g. test.parapet-software.work) for stricter control.
 ENV NG_ALLOWED_HOSTS=*
 
-# Header-ele de proxy de încredere (scot warning-urile x-forwarded din SSR).
+# Trusted proxy headers (suppresses x-forwarded warnings from SSR).
 ENV NG_TRUST_PROXY_HEADERS=x-forwarded-for,x-forwarded-host,x-forwarded-proto,x-forwarded-port
 
-# IMPORTANT: în Hermes setează BACKEND_URL către serviciul backend, ex:
+# IMPORTANT: in Hermes set BACKEND_URL to the backend service, e.g.:
 #   http://hermes-app-backend-main-<hash>:<port>
-# Default-ul localhost:3000 e doar pentru dezvoltare locală.
+# The localhost:3000 default is for local development only.
 ENV BACKEND_URL=http://localhost:3000
 
 COPY --from=builder /app/dist/frontend/ ./dist/frontend/
 
-# Portul serverului Node SSR (neschimbat — nu trebuie modificat nimic în Hermes)
+# Node SSR server port (unchanged — nothing to modify in Hermes)
 EXPOSE 4000
 
 CMD ["node", "dist/frontend/server/server.mjs"]

@@ -1,42 +1,42 @@
-# Stage 1: Build local
+# Stage 1: Local build
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copiem doar fișierele de configurare pentru instalarea dependințelor
+# Copy only configuration files for dependency installation
 COPY package*.json tsconfig.json ./
 
-# Instalăm toate dependințele (inclusiv devDependencies pentru TypeScript)
+# Install all dependencies (including devDependencies for TypeScript)
 RUN npm ci
 
-# Copiem codul sursă
+# Copy source code
 COPY src/ ./src
 
-# Compilăm TypeScript-ul în JavaScript (generează folderul /dist)
+# Compile TypeScript to JavaScript (generates the /dist folder)
 RUN npm run build
 
-# Curățăm devDependencies pentru a păstra imaginea finală mică
+# Remove devDependencies to keep the final image small
 RUN npm prune --production
 
 
-# Stage 2: Runtime-ul de producție
+# Stage 2: Production runtime
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Setăm variabila de mediu pentru producție
+# Set production environment variable
 ENV NODE_ENV=production
 
-# Copiem doar modulele necesare de producție și codul compilat din etapa anterioară
+# Copy only the production modules and compiled code from the previous stage
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package*.json ./
 
-# Expunem portul pe care rulează Express (configurat în .env sau default 3000)
+# Expose the port Express listens on (configured in .env or defaults to 3000)
 EXPOSE 3000
 
-# Volum persistent detectat automat de Hermes
+# Persistent volume auto-detected by Hermes
 VOLUME /data
 
-# Pornim aplicația backend
+# Start the backend application
 CMD ["node", "dist/server.js"]

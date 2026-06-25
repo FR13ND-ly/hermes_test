@@ -15,10 +15,15 @@ const PORT = process.env.PORT || 3000;
 const VOLUME_MOUNT_PATH = process.env.VOLUME_MOUNT_PATH || '/data';
 
 function getStorageUrl(): string {
+  let storageUrl = 'http://localhost:8000/api/v1/storage';
   if (process.env.HERMES_PLATFORM_URL) {
-    return `${process.env.HERMES_PLATFORM_URL}/api/v1/storage`;
+    storageUrl = `${process.env.HERMES_PLATFORM_URL}/api/v1/storage`;
   }
-  return 'http://localhost:8000/api/v1/storage';
+  const isContainer = fs.existsSync('/.dockerenv') || process.env.KUBERNETES_SERVICE_HOST;
+  if (isContainer && storageUrl.includes('localhost')) {
+    storageUrl = storageUrl.replace('localhost', 'host.docker.internal');
+  }
+  return storageUrl;
 }
 
 function getPlatformOrigin(): string {
@@ -54,12 +59,12 @@ function getMainDatabaseUrl(): string {
 const mainDbPool = new Pool({ connectionString: getMainDatabaseUrl() });
 
 // ==========================================
-// REDIS (bază de date Redis legată la proiect)
+// REDIS (Redis database linked to the project)
 // ==========================================
-// Hermes publică connection string-ul unui Redis legat ca `redis://:parolă@host:6379`
-// în env pool — sub DATABASE_URL sau <NUME>_DATABASE_URL, în funcție de cum e numit.
-// Scanăm valorile din env după prima care arată a Redis, ca să-l găsim indiferent de
-// numele cheii (sau REDIS_URL explicit, pentru dev local).
+// Hermes publishes the connection string of a linked Redis as `redis://:password@host:6379`
+// in the env pool — under DATABASE_URL or <NAME>_DATABASE_URL, depending on how it is named.
+// We scan env values for the first one that looks like Redis, to find it regardless of
+// the key name (or explicit REDIS_URL for local dev).
 function getRedisUrl(): string | null {
   if (process.env.REDIS_URL) return process.env.REDIS_URL;
   for (const value of Object.values(process.env)) {
@@ -72,20 +77,20 @@ let redisClient: RedisClientType | null = null;
 async function getRedis(): Promise<RedisClientType> {
   let url = getRedisUrl();
   if (!url) {
-    throw new Error('Niciun Redis legat: nu am găsit un env redis:// (leagă o bază Redis la proiect).');
+    throw new Error('No Redis linked: no redis:// env found (link a Redis database to the project).');
   }
   if (url.startsWith('redis://:')) {
     url = url.replace('redis://:', 'redis://default:');
   }
   if (!redisClient) {
     redisClient = createClient({ url });
-    redisClient.on('error', (e) => console.error('⚠️ [Redis] Eroare conexiune:', (e as Error).message));
+    redisClient.on('error', (e) => console.error('⚠️ [Redis] Connection error:', (e as Error).message));
   }
   if (!redisClient.isOpen) await redisClient.connect();
   return redisClient;
 }
 
-// Maschează parola din connection string pentru afișare în UI.
+// Mask the password in the connection string for display in the UI.
 function maskRedisUrl(url: string | null): string | null {
   return url ? url.replace(/(redis:\/\/[^:]*:)[^@]*(@)/, '$1***$2') : null;
 }
@@ -162,7 +167,7 @@ async function getBaaSConfig(): Promise<BaaSConfig> {
       }
     }
   } catch (err: any) {
-    console.warn(`⚠️ [BaaS Config] Nu s-a putut interoga baza de date centrala pentru configurarea BaaS:`, err.message);
+    console.warn(`⚠️ [BaaS Config] Could not query the central database for BaaS config:`, err.message);
   }
 
   resolvedBaaSConfig = { appId, secret, apiKey };
@@ -182,16 +187,16 @@ app.use(express.json());
 if (!fs.existsSync(VOLUME_MOUNT_PATH)) {
   try {
     fs.mkdirSync(VOLUME_MOUNT_PATH, { recursive: true });
-    console.log(`✅ [Volume] Directorul ${VOLUME_MOUNT_PATH} a fost creat.`);
+    console.log(`✅ [Volume] Directory ${VOLUME_MOUNT_PATH} created.`);
   } catch (err) {
-    console.error(`❌ [Volume] Eroare la crearea directorului ${VOLUME_MOUNT_PATH}:`, err);
+    console.error(`❌ [Volume] Error creating directory ${VOLUME_MOUNT_PATH}:`, err);
   }
 }
 
-// CONFIGURARE POOL POSTGRES NATIV
+// NATIVE POSTGRES POOL CONFIG
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-// Auto-creare tabele la startup
+// Auto-create tables on startup
 const initDatabase = async () => {
   const createUserFilesTable = `
     CREATE TABLE IF NOT EXISTS user_files (
@@ -220,11 +225,11 @@ const initDatabase = async () => {
   await pool.query(createUserFilesTable);
   await pool.query(createCronExecutionsTable);
   await pool.query(createTestItemsTable);
-  console.log('✅ [Postgres] Toate tabelele necesare au fost verificate/create.');
+  console.log('✅ [Postgres] All required tables verified/created.');
 };
-// Pod-ul poate porni înainte ca rutarea de rețea către serviciul DB să fie
-// complet gata (race la boot în k8s). Reîncercăm cu backoff în loc să murim la
-// prima eroare — altfel un blip tranzitoriu rămâne "lipit" până la un redeploy.
+// The pod may start before the network routing to the DB service is
+// fully ready (boot race in k8s). Retry with backoff instead of dying on
+// the first error — otherwise a transient blip stays "stuck" until a redeploy.
 const runInitWithRetry = async () => {
   const maxAttempts = 30;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -234,22 +239,22 @@ const runInitWithRetry = async () => {
     } catch (err: any) {
       const delayMs = Math.min(1000 * attempt, 5000);
       console.warn(
-        `⏳ [Postgres] Conexiune indisponibilă (încercarea ${attempt}/${maxAttempts}, ${err?.code || err?.message}). Reîncerc în ${delayMs}ms...`,
+        `⏳ [Postgres] Connection unavailable (attempt ${attempt}/${maxAttempts}, ${err?.code || err?.message}). Retrying in ${delayMs}ms...`,
       );
       await new Promise((r) => setTimeout(r, delayMs));
     }
   }
-  console.error('❌ [Postgres] Nu m-am putut conecta/inițializa DB-ul după toate încercările.');
+  console.error('❌ [Postgres] Failed to connect/initialize DB after all attempts.');
 };
 runInitWithRetry();
 
-// MIDDLEWARE PENTRU BAAS AUTH (Validează tokenul JWT sau x-user-id ca fallback)
+// BAAS AUTH MIDDLEWARE (Validates the JWT token or x-user-id as fallback)
 const requirePermission = (requiredRole: string) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     let userId: string | null = null;
     let roles: string[] = [];
 
-    // 1. Încercăm validarea pe baza token-ului JWT din header-ul Authorization
+    // 1. Try validating the JWT token from the Authorization header
     const authHeader = req.headers['authorization'];
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
@@ -261,15 +266,15 @@ const requirePermission = (requiredRole: string) => {
           userId = decoded.sub || decoded.userId;
           roles = decoded.roles || [];
         } catch (err) {
-          console.warn('⚠️ [BaaS Auth] Token invalid sau expirat:', err);
-          return res.status(401).json({ error: 'Token invalid sau expirat.' });
+          console.warn('⚠️ [BaaS Auth] Token invalid or expired:', err);
+          return res.status(401).json({ error: 'Token invalid or expired.' });
         }
       } else {
-        console.warn('⚠️ [BaaS Auth] HERMES_AUTH_SECRET/custom secret nu este definit. Se trece la fallback pe headere.');
+        console.warn('⚠️ [BaaS Auth] HERMES_AUTH_SECRET/custom secret is not defined. Falling back to headers.');
       }
     }
 
-    // 2. Fallback pe headerele x-user-id / x-user-roles (pentru dev local sau compatibilitate)
+    // 2. Fallback to x-user-id / x-user-roles headers (for local dev or compatibility)
     if (!userId) {
       userId = req.headers['x-user-id'] as string;
       const userRolesHeader = (req.headers['x-user-roles'] as string) || 'user';
@@ -281,20 +286,20 @@ const requirePermission = (requiredRole: string) => {
     }
 
     if (requiredRole !== 'any' && !roles.includes(requiredRole.toLowerCase())) {
-      return res.status(403).json({ error: `Forbidden. Necesită rolul: ${requiredRole}` });
+      return res.status(403).json({ error: `Forbidden. Required role: ${requiredRole}` });
     }
     next();
   };
 };
 
 // ==========================================
-// RUTE CONFIGURARE
+// CONFIG ROUTES
 // ==========================================
 app.get('/api/config', async (req: Request, res: Response) => {
   const config = await getBaaSConfig();
   const hermesBaaSUrl = process.env.HERMES_PLATFORM_URL 
     ? `${process.env.HERMES_PLATFORM_URL}/api/v1/apps/${config.appId}` 
-    : `http://localhost:8000/api/v1/apps/${config.appId || 'APP_ID_AICI'}`;
+    : `http://localhost:8000/api/v1/apps/${config.appId || 'APP_ID_HERE'}`;
   res.json({
     hermesBaaSUrl,
     appApiKey: config.apiKey || 'hm_tff.secret32charsAici',
@@ -304,7 +309,7 @@ app.get('/api/config', async (req: Request, res: Response) => {
 });
 
 // ==========================================
-// CRUD DATABASE - test_items
+// DATABASE CRUD - test_items
 // ==========================================
 app.get('/api/items', async (req: Request, res: Response) => {
   try {
@@ -318,7 +323,7 @@ app.get('/api/items', async (req: Request, res: Response) => {
 app.post('/api/items', async (req: Request, res: Response) => {
   try {
     const { title, description } = req.body;
-    if (!title) return res.status(400).json({ error: 'Titlul este obligatoriu.' });
+    if (!title) return res.status(400).json({ error: 'Title is required.' });
     const result = await pool.query(
       'INSERT INTO test_items (title, description) VALUES ($1, $2) RETURNING *',
       [title, description || '']
@@ -333,12 +338,12 @@ app.put('/api/items/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { title, description } = req.body;
-    if (!title) return res.status(400).json({ error: 'Titlul este obligatoriu.' });
+    if (!title) return res.status(400).json({ error: 'Title is required.' });
     const result = await pool.query(
       'UPDATE test_items SET title = $1, description = $2 WHERE id = $3 RETURNING *',
       [title, description || '', id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Resursa nu a fost găsită.' });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Resource not found.' });
     res.json(result.rows[0]);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -349,7 +354,7 @@ app.delete('/api/items/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const result = await pool.query('DELETE FROM test_items WHERE id = $1 RETURNING *', [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Resursa nu a fost găsită.' });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Resource not found.' });
     res.json(result.rows[0]);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -357,9 +362,9 @@ app.delete('/api/items/:id', async (req: Request, res: Response) => {
 });
 
 // ==========================================
-// RUTE REDIS (cheie-valoare, prefix test:)
+// REDIS ROUTES (key-value, prefix test:)
 // ==========================================
-// Stare conexiune + ce URL folosim (cu parola mascată).
+// Connection status + which URL we use (with masked password).
 app.get('/api/redis/status', async (req: Request, res: Response) => {
   try {
     const client = await getRedis();
@@ -370,7 +375,7 @@ app.get('/api/redis/status', async (req: Request, res: Response) => {
   }
 });
 
-// Listează cheile de test (cu valoare + TTL rămas).
+// List test keys (with value + remaining TTL).
 app.get('/api/redis/keys', async (req: Request, res: Response) => {
   try {
     const client = await getRedis();
@@ -386,11 +391,11 @@ app.get('/api/redis/keys', async (req: Request, res: Response) => {
   }
 });
 
-// Scrie o cheie (TTL opțional, în secunde).
+// Write a key (optional TTL, in seconds).
 app.post('/api/redis/keys', async (req: Request, res: Response) => {
   try {
     const { key, value, ttl } = req.body;
-    if (!key) return res.status(400).json({ error: 'Cheia este obligatorie.' });
+    if (!key) return res.status(400).json({ error: 'Key is required.' });
     const client = await getRedis();
     const seconds = Number(ttl);
     if (Number.isFinite(seconds) && seconds > 0) {
@@ -404,7 +409,7 @@ app.post('/api/redis/keys', async (req: Request, res: Response) => {
   }
 });
 
-// Șterge o cheie de test.
+// Delete a test key.
 app.delete('/api/redis/keys/:key', async (req: Request, res: Response) => {
   try {
     const client = await getRedis();
@@ -416,7 +421,7 @@ app.delete('/api/redis/keys/:key', async (req: Request, res: Response) => {
 });
 
 // ==========================================
-// RUTE STORAGE S3 (user_files)
+// S3 STORAGE ROUTES (user_files)
 // ==========================================
 app.get('/api/files', async (req: Request, res: Response) => {
   try {
@@ -452,11 +457,8 @@ function getBucketCredentials() {
   }
 
   if (!secretKey) {
-    secretKey = process.env.HERMES_STORAGE_SECRET_KEY || process.env.HERMES_SECRET_KEY || process.env.HERMES_STORAGE_TOKEN || process.env.HERMES_API_KEY || '';
-    const envAppId = process.env.HERMES_STORAGE_APP_ID || process.env.HERMES_APP_ID || '';
-    if (envAppId.startsWith('hsk_') || process.env.HERMES_STORAGE_APP_ID) {
-      appId = envAppId;
-    }
+    secretKey = process.env.HERMES_STORAGE_SECRET_KEY || process.env.HERMES_APP_TOKEN || '';
+    appId = process.env.HERMES_STORAGE_APP_ID || '';
   }
 
   return { appId, secretKey };
@@ -466,17 +468,17 @@ app.delete('/api/files/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // 1. Obținem storage_object_id din baza de date
+    // 1. Get storage_object_id from the database
     const fileResult = await pool.query('SELECT storage_object_id FROM user_files WHERE id = $1', [id]);
     if (fileResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Fișierul nu a fost găsit în baza de date.' });
+      return res.status(404).json({ error: 'File not found in the database.' });
     }
 
     const storageObjectId = fileResult.rows[0].storage_object_id;
     const storageUrl = getStorageUrl();
     const { appId: storageAppId, secretKey: storageSecretKey } = getBucketCredentials();
 
-    // 2. Trimitem cererea DELETE către platforma de stocare S3
+    // 2. Send the DELETE request to the S3 storage platform
     try {
       await axios.delete(`${storageUrl}/objects/${storageObjectId}`, {
         headers: {
@@ -485,26 +487,26 @@ app.delete('/api/files/:id', async (req: Request, res: Response) => {
           'Authorization': `Bearer ${storageSecretKey}`
         }
       });
-      console.log(`✅ [Storage] Obiectul S3 ${storageObjectId} a fost șters din platformă.`);
+      console.log(`✅ [Storage] S3 object ${storageObjectId} deleted from platform.`);
     } catch (storageErr: any) {
-      console.error(`⚠️ [Storage] Nu s-a putut șterge obiectul S3 ${storageObjectId} din platformă:`, storageErr.response?.data || storageErr.message);
-      // Chiar dacă ștergerea din S3 eșuează (ex: 404 sau deja șters), continuăm cu ștergerea din DB pentru a nu rămâne blocați
+      console.error(`⚠️ [Storage] Could not delete S3 object ${storageObjectId} from platform:`, storageErr.response?.data || storageErr.message);
+      // Even if the S3 deletion fails (e.g. 404 or already deleted), continue deleting from DB to avoid getting stuck
     }
 
-    // 3. Ștergem înregistrarea din baza de date locală
+    // 3. Delete the record from the local database
     await pool.query('DELETE FROM user_files WHERE id = $1', [id]);
-    res.json({ success: true, message: 'Fișierul a fost șters cu succes.' });
+    res.json({ success: true, message: 'File deleted successfully.' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Proxy pentru initializare upload in Storage Privat Hermes S3
+// Proxy for upload initialization in Hermes S3 Private Storage
 app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
   const storageUrl = getStorageUrl();
   const { appId: storageAppId, secretKey: storageSecretKey } = getBucketCredentials();
 
-  // Determinam dinamic slug-ul bucket-ului din mediul proiectului (ex: BUCKET_FSAD_SECRET_KEY -> fsad)
+  // Dynamically determine the bucket slug from the project environment (e.g. BUCKET_FSAD_SECRET_KEY -> fsad)
   let bucketSlug = 'dsfd';
   for (const key of Object.keys(process.env)) {
     if (key.startsWith('BUCKET_') && key.endsWith('_SECRET_KEY')) {
@@ -550,7 +552,7 @@ app.post('/api/storage/upload/init', async (req: Request, res: Response) => {
   }
 });
 
-// Proxy pentru upload-ul binar propriu-zis in Storage Privat Hermes S3
+// Proxy for the actual binary upload in Hermes S3 Private Storage
 app.post('/api/storage/upload/:id', async (req: Request, res: Response) => {
   try {
     const uploadId = req.params.id;
@@ -591,13 +593,13 @@ app.get('/api/files/:id/download', async (req: Request, res: Response) => {
   }
 });
 
-// Proxy pentru download securizat si privat din Storage Privat Hermes S3
+// Proxy for secure private download from Hermes S3 Private Storage
 app.get('/api/storage/download/:id', async (req: Request, res: Response) => {
   try {
     const fileId = req.params.id;
 
     const fileCheck = await pool.query('SELECT storage_object_id FROM user_files WHERE id = $1', [fileId]);
-    if (fileCheck.rows.length === 0) return res.status(404).json({ error: 'Fișierul nu a fost găsit.' });
+    if (fileCheck.rows.length === 0) return res.status(404).json({ error: 'File not found.' });
 
     const storageObjectId = fileCheck.rows[0].storage_object_id;
 
@@ -619,7 +621,7 @@ app.get('/api/storage/download/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Proxy pentru register in BaaS-ul platformei Hermes
+// Proxy for registration in Hermes platform BaaS
 app.post('/api/auth/register', async (req: Request, res: Response) => {
   try {
     const { identifier, password } = req.body;
@@ -645,7 +647,7 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
   }
 });
 
-// Proxy pentru login in BaaS-ul platformei Hermes
+// Proxy for login in Hermes platform BaaS
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
     const { identifier, password } = req.body;
@@ -672,12 +674,12 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
 });
 
 // ==========================================
-// RUTE PERSISTENT VOLUMES (PVC)
+// PERSISTENT VOLUME ROUTES (PVC)
 // ==========================================
 app.post('/api/volume/upload', async (req: Request, res: Response) => {
   try {
     const fileName = req.query.name as string;
-    if (!fileName) return res.status(400).json({ error: 'Numele fișierului lipsește.' });
+    if (!fileName) return res.status(400).json({ error: 'File name is missing.' });
 
     const safeName = path.basename(fileName);
     const filePath = path.join(VOLUME_MOUNT_PATH, safeName);
@@ -690,7 +692,7 @@ app.post('/api/volume/upload', async (req: Request, res: Response) => {
     });
 
     req.on('error', (err) => {
-      res.status(500).json({ error: 'Eroare la scrierea pe volum: ' + err.message });
+      res.status(500).json({ error: 'Error writing to volume: ' + err.message });
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -733,9 +735,9 @@ app.delete('/api/volume/files/:name', async (req: Request, res: Response) => {
 
     if (fs.existsSync(filePath)) {
       await fs.promises.unlink(filePath);
-      res.json({ success: true, message: `Fișierul ${safeName} a fost șters.` });
+      res.json({ success: true, message: `File ${safeName} deleted.` });
     } else {
-      res.status(404).json({ error: 'Fișierul nu există pe volum.' });
+      res.status(404).json({ error: 'File does not exist on volume.' });
     }
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -743,11 +745,11 @@ app.delete('/api/volume/files/:name', async (req: Request, res: Response) => {
 });
 
 // ==========================================
-// RUTE CRON
+// CRON ROUTES
 // ==========================================
 app.post('/api/cron/cleanup', async (req: Request, res: Response) => {
   try {
-    console.log('🧹 [Cron Webhook] Se șterg fișierele mai vechi de 30 de zile...');
+    console.log('🧹 [Cron Webhook] Deleting files older than 30 days...');
     const oldFiles = await pool.query("SELECT id, storage_object_id FROM user_files WHERE created_at < NOW() - INTERVAL '30 days'");
 
     const storageUrl = getStorageUrl();
@@ -780,27 +782,27 @@ app.get('/api/cron/status', async (req: Request, res: Response) => {
 });
 
 // ==========================================
-// RUTA SERVERLESS KNATIVE PROXY
+// SERVERLESS KNATIVE PROXY ROUTE
 // ==========================================
 app.get('/api/analytics', async (req: Request, res: Response) => {
   try {
     const response = await axios.get(process.env.SERVERLESS_REPORT_URL || '', { timeout: 4000 });
     res.json(response.data);
   } catch (error) {
-    res.status(503).json({ message: 'Funcția Knative este la rece (0 replici) și se trezește acum...' });
+    res.status(503).json({ message: 'The Knative function is cold (0 replicas) and waking up now...' });
   }
 });
 
 app.post('/api/analytics/test', async (req: Request, res: Response) => {
   const { url, method, body } = req.body;
-  if (!url) return res.status(400).json({ error: 'URL-ul este obligatoriu.' });
+  if (!url) return res.status(400).json({ error: 'URL is required.' });
 
   let targetUrl = url;
   if (targetUrl.includes('localhost') || targetUrl.includes('127.0.0.1')) {
     const isContainer = fs.existsSync('/.dockerenv') || process.env.KUBERNETES_SERVICE_HOST;
     if (isContainer) {
       targetUrl = targetUrl.replace('localhost', 'host.docker.internal').replace('127.0.0.1', 'host.docker.internal');
-      console.log(`ℹ️ [Serverless Proxy] Rescris ${url} -> ${targetUrl} din container.`);
+      console.log(`ℹ️ [Serverless Proxy] Rewrote ${url} -> ${targetUrl} from container.`);
     }
   }
 
@@ -817,4 +819,4 @@ app.post('/api/analytics/test', async (req: Request, res: Response) => {
   }
 });
 
-app.listen(PORT, () => console.log(`🚀 [Hermes All-in-One Backend] pornit nativ pe portul ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 [Hermes All-in-One Backend] running natively on port ${PORT}`));

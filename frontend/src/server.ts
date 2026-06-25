@@ -14,17 +14,17 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
-// Suntem în spatele Traefik: avem încredere în header-ele de proxy.
+// We're behind Traefik: trust proxy headers.
 app.set('trust proxy', true);
 
 /**
- * Proxy same-origin pentru API: /api/* -> backend.
+ * Same-origin proxy for API: /api/* -> backend.
  *
- * Frontend-ul cheamă `${origin}/api/...`, deci serverul Node redirecționează acele
- * cereri către aplicația backend. Ținta e configurabilă LA RUNTIME prin BACKEND_URL
- * (ex. în Hermes: http://hermes-app-backend-main-<hash>:<port>) — dacă recreezi
- * backend-ul, schimbi doar env-ul, fără rebuild la frontend. Body-ul (inclusiv
- * upload-uri) e transmis prin stream (pipe).
+ * The frontend calls `${origin}/api/...`, so the Node server forwards those
+ * requests to the backend application. The target is configurable at RUNTIME via BACKEND_URL
+ * (e.g. in Hermes: http://hermes-app-backend-main-<hash>:<port>) — if you recreate
+ * the backend, only change the env, no frontend rebuild needed. The body (including
+ * uploads) is streamed via pipe.
  */
 const backendUrl = process.env['BACKEND_URL'] || 'http://localhost:3000';
 const backendTarget = new URL(backendUrl);
@@ -37,7 +37,7 @@ app.use('/api', (req, res) => {
       hostname: backendTarget.hostname,
       port: backendTarget.port || (backendTarget.protocol === 'https:' ? 443 : 80),
       method: req.method,
-      // express scoate prefixul /api din req.url când rută e montată pe '/api' — îl readăugăm.
+      // express strips the /api prefix from req.url when route is mounted on '/api' — we re-add it.
       path: '/api' + req.url,
       headers: { ...req.headers, host: backendTarget.host },
     },
@@ -47,11 +47,11 @@ app.use('/api', (req, res) => {
     },
   );
   proxyReq.on('error', (err) => {
-    console.error('Eroare la proxy către backend:', process.env['BACKEND_URL']);
+    console.error('Proxy error to backend:', process.env['BACKEND_URL']);
     console.log(backendUrl)
-    console.error('[proxy /api] eroare către backend:', err);
+    console.error('[proxy /api] error forwarding to backend:', err);
     if (!res.headersSent) {
-      res.status(502).json({ error: 'Backend indisponibil' });
+      res.status(502).json({ error: 'Backend unavailable' });
     }
   });
   req.pipe(proxyReq);

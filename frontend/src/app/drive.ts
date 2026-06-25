@@ -17,7 +17,7 @@ export class DriveService {
   constructor() {
     if (typeof window !== 'undefined') {
       const origin = window.location.origin;
-      // Daca suntem pe un domeniu local (localhost/127.0.0.1/etc), nu suprascriem backend-ul implicit (localhost:3000)
+      // If we are on a local domain (localhost/127.0.0.1/etc), do not overwrite the default backend (localhost:3000)
       if (!origin.includes('localhost') && !origin.includes('127.0.0.1')) {
         this.nodeBackendUrl.set(`${origin}/api`);
       }
