@@ -12,6 +12,8 @@ import { switchMap } from 'rxjs';
 export class App implements OnInit {
   public driveService = inject(DriveService);
 
+  activeTab = signal('database');
+
   // User session signals (Hermes BaaS: per-app identifier + password)
   identifier = signal('');
   password = signal('');
